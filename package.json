@@ -1,0 +1,44 @@
+{
+  "name": "vscode-zoekt-extension",
+  "displayName": "Zoekt Code Search",
+  "description": "An extension for searching code using the Zoekt JSON API.",
+  "version": "0.1.0",
+  "publisher": "your-name",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "activationEvents": [
+    "onCommand:zoekt.search"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "zoekt.search",
+        "title": "Search Code with Zoekt"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "zoektSearchResults",
+          "name": "Zoekt Search Results"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json",
+    "postinstall": "node ./out/compile.js"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0",
+    "vscode": "^1.1.36",
+    "ts-loader": "^8.0.0"
+  },
+  "dependencies": {
+    "axios": "^0.21.1"
+  }
+}

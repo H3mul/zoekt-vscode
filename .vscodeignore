@@ -1,0 +1,12 @@
+# The contents of the file /vscode-zoekt-extension/vscode-zoekt-extension/.vscodeignore
+
+.vscode/
+node_modules/
+out/
+*.js
+*.map
+*.ts
+*.test.ts
+*.spec.ts
+.DS_Store
+.vscode-test/
