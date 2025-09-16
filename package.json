@@ -22,11 +22,6 @@
     "views": {
       "zoekt-sidebar": [
         {
-          "id": "zoekt-search-input",
-          "name": "Search Input",
-          "type": "webview"
-        },
-        {
           "id": "searchResults",
           "name": "Search Results"
         }

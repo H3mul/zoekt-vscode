@@ -11,7 +11,8 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<TreeItem> 
 
     constructor() {}
 
-    public refresh(): void {
+    public refresh(results: FileMatch[]): void {
+        this.results = results;
         this._onDidChangeTreeData.fire(undefined);
     }
 
@@ -42,6 +43,6 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<TreeItem> 
 
     public setResults(results: FileMatch[]): void {
         this.results = results;
-        this.refresh();
+        this.refresh(results);
     }
 }
