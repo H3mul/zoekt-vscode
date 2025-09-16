@@ -1,36 +1,46 @@
 import * as vscode from 'vscode';
-import { SearchResult } from '../types/zoekt';
+import { FileMatch, LineMatch } from '../types/zoekt';
 
-export class SearchResultsProvider implements vscode.TreeDataProvider<SearchResult> {
-    private _onDidChangeTreeData: vscode.EventEmitter<SearchResult | undefined | void> = new vscode.EventEmitter<SearchResult | undefined | void>();
-    readonly onDidChangeTreeData: vscode.Event<SearchResult | undefined | void> = this._onDidChangeTreeData.event;
+type TreeItem = FileMatch | LineMatch;
 
-    private results: SearchResult[] = [];
+export class SearchResultsProvider implements vscode.TreeDataProvider<TreeItem> {
+    private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | null> = new vscode.EventEmitter<TreeItem | undefined | null>();
+    readonly onDidChangeTreeData: vscode.Event<TreeItem | undefined | null> = this._onDidChangeTreeData.event;
+
+    private results: FileMatch[] = [];
 
     constructor() {}
 
     public refresh(): void {
-        this._onDidChangeTreeData.fire();
+        this._onDidChangeTreeData.fire(undefined);
     }
 
-    public getTreeItem(element: SearchResult): vscode.TreeItem {
-        const treeItem = new vscode.TreeItem(element.path);
-        treeItem.command = {
-            command: 'vscode-zoekt-extension.openFile',
-            title: 'Open File',
-            arguments: [element.path]
-        };
-        return treeItem;
+    public getTreeItem(element: TreeItem): vscode.TreeItem {
+        if ('LineNumber' in element) { // LineMatch
+            const treeItem = new vscode.TreeItem(element.Line.trim());
+            treeItem.command = {
+                command: 'vscode-zoekt-extension.openFile',
+                title: 'Open File',
+                arguments: [(this.results.find(r => r.LineMatches.includes(element)) as FileMatch).FileName, element.LineNumber]
+            };
+            return treeItem;
+        } else { // FileMatch
+            const treeItem = new vscode.TreeItem(element.FileName, vscode.TreeItemCollapsibleState.Expanded);
+            return treeItem;
+        }
     }
 
-    public getChildren(element?: SearchResult): vscode.ProviderResult<SearchResult[]> {
+    public getChildren(element?: TreeItem): vscode.ProviderResult<TreeItem[]> {
         if (element) {
-            return []; // No children for search results
+            if ('LineMatches' in element) {
+                return element.LineMatches;
+            }
+            return [];
         }
         return this.results;
     }
 
-    public setResults(results: SearchResult[]): void {
+    public setResults(results: FileMatch[]): void {
         this.results = results;
         this.refresh();
     }

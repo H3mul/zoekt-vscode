@@ -1,20 +1,48 @@
 import axios from 'axios';
-import { SearchResult, Query } from '../types/zoekt';
+import { ZoektSearchRequest, ZoektSearchResponse, FileMatch, SearchQuery } from '../types/zoekt';
 
 export class ZoektService {
-    private apiUrl: string;
+    private apiUrl: string = '';
 
-    constructor(apiUrl: string) {
+    constructor() {}
+
+    public setApiUrl(apiUrl: string) {
         this.apiUrl = apiUrl;
     }
 
-    public async search(query: Query): Promise<SearchResult[]> {
+    private async zoektRequest<T>(endpoint: string, payload: any): Promise<T> {
+        if (!this.apiUrl) {
+            throw new Error('Zoekt API URL not configured.');
+        }
         try {
-            const response = await axios.post(`${this.apiUrl}/search`, query);
-            return response.data.results;
+            const response = await axios.post<T>(`${this.apiUrl}${endpoint}`, payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            return response.data;
         } catch (error) {
-            console.error('Error fetching search results from Zoekt API:', error);
+            console.error(`Error fetching from Zoekt API endpoint ${endpoint}:`, error);
             throw new Error('Failed to fetch search results');
         }
+    }
+
+    public async search({query, contextLines, files, matches}: SearchQuery): Promise<FileMatch[]> {
+        const searchRequest: ZoektSearchRequest = {
+            Q: query,
+            Opts: {
+                ChunkMatches: true,
+                NumContextLines: contextLines || 3,
+                MaxDocDisplayCount: files || 50,
+                MaxMatchDisplayCount: matches || 0,
+
+                // These are hardcoded because they're really about bounding the amount
+                // of work the zoekt server does, they shouldn't be user configurable.
+                ShardMaxMatchCount: 10_000,
+                TotalMaxMatchCount: 100_000,
+            },
+        };
+        const response = await this.zoektRequest<ZoektSearchResponse>('/api/search', searchRequest);
+        return response.Result.Files;
     }
 }
