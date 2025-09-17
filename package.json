@@ -23,7 +23,7 @@
       "zoekt-sidebar": [
         {
           "id": "searchResults",
-          "name": "Search Results",
+          "name": "Results",
           "type": "tree"
         }
       ]
@@ -33,8 +33,22 @@
         "command": "zoekt.search",
         "title": "Search with Zoekt",
         "icon": "$(search)"
+      },
+      {
+        "command": "zoekt.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "zoekt.collapseAll",
+          "when": "view == searchResults",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile": "tsc -p ./",

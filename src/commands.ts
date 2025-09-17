@@ -25,5 +25,9 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         }
     });
 
-    context.subscriptions.push(searchCommand);
+    const collapseAllCommand = vscode.commands.registerCommand('zoekt.collapseAll', () => {
+        vscode.commands.executeCommand('workbench.actions.treeView.searchResults.collapseAll');
+    });
+
+    context.subscriptions.push(searchCommand, collapseAllCommand);
 }
