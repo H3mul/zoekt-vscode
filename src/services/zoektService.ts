@@ -27,9 +27,15 @@ export class ZoektService {
         }
     }
 
-    public async search({query, contextLines, files, matches}: SearchQuery): Promise<FileMatch[]> {
+    public async search({query, contextLines, files, matches, repoList}: SearchQuery): Promise<FileMatch[]> {
+        let queryString = query;
+        if (repoList && repoList.length > 0) {
+            const repoQuery = repoList.map(repo => `repo:${repo}`).join(" or ");
+            queryString += ` ${repoQuery}`;
+        }
+
         const searchRequest: ZoektSearchRequest = {
-            Q: query,
+            Q: queryString,
             Opts: {
                 ChunkMatches: false,
                 NumContextLines: contextLines || 1,

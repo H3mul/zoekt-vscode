@@ -5,21 +5,38 @@ import { Buffer } from 'buffer';
 
 export type LineMatchWithFileName = LineMatch & { fileName: string };
 
-export type ResultEntry = FileMatch | LineMatchWithFileName;
+interface SummaryEntry {
+    type: 'summary';
+}
+
+export type ResultEntry = FileMatch | LineMatchWithFileName | SummaryEntry;
 
 function isFileMatch(element: ResultEntry): element is FileMatch {
-    return (element as FileMatch).LineMatches !== undefined;
+    return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
 }
+
+function isSummaryEntry(element: ResultEntry): element is SummaryEntry {
+    return (element as SummaryEntry).type === 'summary';
+}
+
 export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntry> {
     private _onDidChangeTreeData: vscode.EventEmitter<ResultEntry | undefined | null> = new vscode.EventEmitter<ResultEntry | undefined | null>();
     readonly onDidChangeTreeData: vscode.Event<ResultEntry | undefined | null> = this._onDidChangeTreeData.event;
 
     private results: FileMatch[] = [];
+    private totalMatches: number = 0;
+    private searchAllRepos: boolean = false;
 
     constructor() {}
 
     public getTreeItem(element: ResultEntry): vscode.TreeItem {
-        if (isFileMatch(element)) {
+        if (isSummaryEntry(element)) {
+            const icon = this.searchAllRepos ? 'globe' : 'repo';
+            const label = `${this.totalMatches} hits ${this.searchAllRepos ? '(Searching all repositories)' : '(Current )'}`;
+            const treeItem = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+            treeItem.iconPath = new vscode.ThemeIcon(icon);
+            return treeItem;
+        } else if (isFileMatch(element)) {
             const fileName = path.basename(element.FileName);
             const dirName = path.dirname(element.FileName);
 
@@ -61,17 +78,25 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     }
 
     public getChildren(element?: ResultEntry | undefined): vscode.ProviderResult<ResultEntry[]> {
-        if (element) {
-            if (this.isFileMatch(element)) {
-                return element.LineMatches.map(lm => ({ ...lm, fileName: element.FileName }));
+        if (!element) {
+            const summaryElement = this.getSummaryElement();
+            if (this.results.length > 0 || this.totalMatches > 0) {
+                return [summaryElement, ...this.results];
+            } else {
+                return [summaryElement];
             }
+        } else if (isSummaryEntry(element)) {
             return [];
+        } else if (this.isFileMatch(element)) {
+            return element.LineMatches.map(lm => ({ ...lm, fileName: element.FileName }));
         }
-        return this.results;
+        return [];
     }
 
-    public setResults(results: FileMatch[]): void {
+    public setResults(results: FileMatch[], totalMatches: number, searchAllRepos: boolean): void {
         this.results = results;
+        this.totalMatches = totalMatches;
+        this.searchAllRepos = searchAllRepos;
         this._onDidChangeTreeData.fire(undefined);
     }
 
@@ -79,8 +104,12 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         this._onDidChangeTreeData.fire(undefined);
     }
 
+    private getSummaryElement(): SummaryEntry {
+        return { type: 'summary' };
+    }
+
     private isFileMatch(element: ResultEntry): element is FileMatch {
-        return (element as FileMatch).LineMatches !== undefined;
+        return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
     }
 
 }

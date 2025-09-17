@@ -25,6 +25,7 @@ export interface SearchQuery {
     contextLines?: number;
     files?: number;
     matches?: number;
+    repoList?: string[];
 }
 
 export interface ZoektSearchResponse {
