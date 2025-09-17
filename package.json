@@ -23,7 +23,8 @@
       "zoekt-sidebar": [
         {
           "id": "searchResults",
-          "name": "Search Results"
+          "name": "Search Results",
+          "type": "tree"
         }
       ]
     },

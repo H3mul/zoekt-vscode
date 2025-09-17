@@ -31,8 +31,8 @@ export class ZoektService {
         const searchRequest: ZoektSearchRequest = {
             Q: query,
             Opts: {
-                ChunkMatches: true,
-                NumContextLines: contextLines || 3,
+                ChunkMatches: false,
+                NumContextLines: contextLines || 1,
                 MaxDocDisplayCount: files || 50,
                 MaxMatchDisplayCount: matches || 0,
 

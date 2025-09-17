@@ -39,9 +39,17 @@ export interface FileMatch {
     LineMatches: LineMatch[];
 }
 
+
 export interface LineMatch {
     Line: string;
     LineNumber: number;
     Before: string;
     After: string;
+    LineFragments: LineFragment[];
+}
+
+export interface LineFragment {
+    LineOffset: number;
+    Offset: number;
+    MatchLength: number;
 }
