@@ -21,7 +21,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             const fileName = path.basename(element.FileName);
             const dirName = path.dirname(element.FileName);
 
-            const treeItem = new vscode.TreeItem(fileName, vscode.TreeItemCollapsibleState.Collapsed);
+            const treeItem = new vscode.TreeItem(fileName, vscode.TreeItemCollapsibleState.Expanded);
             treeItem.description = dirName;
             treeItem.tooltip = element.FileName;
             return treeItem;

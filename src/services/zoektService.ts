@@ -23,7 +23,7 @@ export class ZoektService {
             return response.data;
         } catch (error) {
             console.error(`Error fetching from Zoekt API endpoint ${endpoint}:`, error);
-            throw new Error('Failed to fetch search results');
+            throw new Error('Failed to connect to Zoekt API');
         }
     }
 

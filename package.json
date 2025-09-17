@@ -31,7 +31,7 @@
     "commands": [
       {
         "command": "zoekt.search",
-        "title": "Search with Zoekt",
+        "title": "Zoekt: Search",
         "icon": "$(search)"
       },
       {
@@ -48,6 +48,21 @@
           "group": "navigation"
         }
       ]
+    },
+    "configuration": {
+      "title": "Zoekt Configuration",
+      "properties": {
+        "zoekt.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "The URL of the Zoekt API server."
+        },
+        "zoekt.queryHistorySize": {
+          "type": "number",
+          "default": 5,
+          "description": "The maximum number of search queries to cache in history."
+        }
+      }
     }
   },
   "scripts": {
