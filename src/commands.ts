@@ -3,7 +3,12 @@ import { ZoektService } from './services/zoektService';
 import { SearchResultsProvider } from './providers/searchResultsProvider';
 import { SearchQuery } from './types/zoekt';
 
-async function performSearch(query: string, zoektService: ZoektService, searchResultsProvider: SearchResultsProvider, context: vscode.ExtensionContext, cachedQueries: string[]) {
+interface CachedQuery {
+    query: string;
+    count: number;
+}
+
+async function performSearch(query: string, zoektService: ZoektService, searchResultsProvider: SearchResultsProvider, context: vscode.ExtensionContext, cachedQueries: CachedQuery[]) {
     try {
         const searchQuery: SearchQuery = { query: query };
         const results = await zoektService.search(searchQuery);
@@ -11,7 +16,9 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
 
         // Update cached queries
         const queryHistorySize = vscode.workspace.getConfiguration('zoekt').get<number>('queryHistorySize', 5);
-        const updatedQueries = [query, ...cachedQueries.filter(q => q !== query)].slice(0, queryHistorySize); // Keep last 'queryHistorySize' queries
+        const matches = results.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
+
+        const updatedQueries = [{ query: query, count: matches }, ...cachedQueries.filter(q => q.query !== query)].slice(0, queryHistorySize); // Keep last 'queryHistorySize' queries
 
         await context.workspaceState.update('zoekt.cachedQueries', updatedQueries);
     } catch (error: any) {
@@ -28,12 +35,12 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         }
         zoektService.setApiUrl(apiUrl);
 
-        const cachedQueries: string[] = context.workspaceState.get('zoekt.cachedQueries', []);
+        const cachedQueries: CachedQuery[] = context.workspaceState.get('zoekt.cachedQueries', []);
 
         const quickPick = vscode.window.createQuickPick();
         quickPick.title = 'Zoekt Search';
         quickPick.placeholder = 'Enter search query or select a recent one';
-        quickPick.items = cachedQueries.map(q => ({ label: q }));
+        quickPick.items = cachedQueries.map(q => ({ label: q.query, description: `(${q.count} hits)` }));
         quickPick.canSelectMany = false;
         quickPick.matchOnDescription = true;
         quickPick.matchOnDetail = true;
@@ -60,5 +67,10 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         vscode.commands.executeCommand('workbench.actions.treeView.searchResults.collapseAll');
     });
 
-    context.subscriptions.push(searchCommand, collapseAllCommand);
+    const clearHistoryCommand = vscode.commands.registerCommand('zoekt.clearHistory', async () => {
+        await context.workspaceState.update('zoekt.cachedQueries', []);
+        vscode.window.showInformationMessage('Zoekt search history cleared.');
+    });
+
+    context.subscriptions.push(searchCommand, collapseAllCommand, clearHistoryCommand);
 }

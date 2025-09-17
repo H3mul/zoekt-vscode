@@ -38,14 +38,35 @@
         "command": "zoekt.collapseAll",
         "title": "Collapse All",
         "icon": "$(collapse-all)"
+      },
+      {
+        "command": "zoekt.clearHistory",
+        "title": "Zoekt: Clear Search History",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
       "view/title": [
         {
+          "command": "zoekt.search",
+          "when": "view == searchResults",
+          "group": "navigation@0"
+        },
+        {
           "command": "zoekt.collapseAll",
           "when": "view == searchResults",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "zoekt.clearHistory",
+          "when": "view == searchResults",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "zoekt.clearHistory",
+          "when": "false"
         }
       ]
     },
