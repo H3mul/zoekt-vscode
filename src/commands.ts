@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ZoektService } from './services/zoektService';
 import { SearchResultsProvider } from './providers/searchResultsProvider';
 import { SearchQuery } from './types/zoekt';
+import { getGitExtensionApi, getRepoNameFromRemoteUrl, getRepoNamesFromGitApi } from './utils/git';
 
 interface CachedQuery {
     query: string;
@@ -10,33 +11,19 @@ interface CachedQuery {
 
 async function performSearch(query: string, zoektService: ZoektService, searchResultsProvider: SearchResultsProvider, context: vscode.ExtensionContext, cachedQueries: CachedQuery[], searchAllRepos: boolean) {
     try {
-        const gitExtension = vscode.extensions.getExtension('vscode.git');
-        const repoList: string[] = [];
+        let repoList: string[] = [];
 
-        if (!searchAllRepos && gitExtension) {
-            const git = gitExtension.exports;
-            const api = git.getAPI(1);
-            if (api.repositories.length > 0) {
-                const repository = api.repositories[0];
-                for (const remote of repository.state.remotes) {
-                    if (remote.fetchUrl) {
-                        try {
-                            const url = new URL(remote.fetchUrl);
-                            repoList.push(url.hostname + url.pathname.replace(/\.git$/, ''));
-                        } catch (e) {
-                            // Handle SSH format like git@github.com:owner/repo.git
-                            const urlMatch = remote.fetchUrl.match(/^(?:(?:ssh:\/\/)?git@)?([^:/]+)[:/](([^/]+)\/([^/]+?))(?:\.git)?$/);
-                            if (urlMatch) {
-                                repoList.push(`${urlMatch[1]}/${urlMatch[2]}`);
-                            }
-                        }
-                    }
-                }
-            }
+        if (!searchAllRepos) {
+            repoList = getRepoNamesFromGitApi();
         }
 
         const searchQuery: SearchQuery = { query: query, repoList: repoList };
         const results = await zoektService.search(searchQuery);
+        if (!results || results.length === 0) {
+            vscode.window.showInformationMessage('Zoekt: No results found.');
+            searchResultsProvider.setResults([], 0, searchAllRepos);
+            return;
+        }
         const totalMatches = results.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
         searchResultsProvider.setResults(results, totalMatches, searchAllRepos);
 
@@ -72,8 +59,8 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         quickPick.matchOnDetail = true;
 
         let searchAllRepos = false;
-        const gitExtension = vscode.extensions.getExtension('vscode.git');
-        if (!gitExtension || !gitExtension.exports.getAPI(1).repositories.length) {
+        const gitApi = getGitExtensionApi();
+        if (!gitApi || !gitApi.repositories.length) {
             searchAllRepos = true; // Default to all repos if not a git project
         }
 

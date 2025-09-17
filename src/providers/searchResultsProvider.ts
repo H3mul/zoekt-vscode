@@ -2,8 +2,9 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { FileMatch, LineMatch } from '../types/zoekt';
 import { Buffer } from 'buffer';
+import { getGitExtensionApi, findTargetRepo, getUriForFile } from '../utils/git';
 
-export type LineMatchWithFileName = LineMatch & { fileName: string };
+export type LineMatchWithFileName = LineMatch & { fileName: string, Repository: string };
 
 interface SummaryEntry {
     type: 'summary';
@@ -27,12 +28,10 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     private totalMatches: number = 0;
     private searchAllRepos: boolean = false;
 
-    constructor() {}
-
-    public getTreeItem(element: ResultEntry): vscode.TreeItem {
+    public async getTreeItem(element: ResultEntry): Promise<vscode.TreeItem> {
         if (isSummaryEntry(element)) {
             const icon = this.searchAllRepos ? 'globe' : 'repo';
-            const label = `${this.totalMatches} hits ${this.searchAllRepos ? '(Searching all repositories)' : '(Current )'}`;
+            const label = `${this.totalMatches} hits ${this.searchAllRepos ? '(Searching all repositories)' : '(Current Project)'}`;
             const treeItem = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
             treeItem.iconPath = new vscode.ThemeIcon(icon);
             return treeItem;
@@ -43,11 +42,21 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             const treeItem = new vscode.TreeItem(fileName, vscode.TreeItemCollapsibleState.Expanded);
             treeItem.description = dirName;
             treeItem.tooltip = element.FileName;
+            treeItem.command = {
+                command: 'vscode.open',
+                title: 'Open File',
+                arguments: [await this.getUriForFile(element.FileName, element.Repository)],
+            };
             return treeItem;
         } else {
             const treeItem = new vscode.TreeItem(this.makeTreeItemLabel(element), vscode.TreeItemCollapsibleState.None);
 
             treeItem.tooltip = `${element.fileName}:${element.LineNumber}`;
+            treeItem.command = {
+                command: 'vscode.open',
+                title: 'Open File',
+                arguments: [await this.getUriForFile(element.fileName, element.Repository), { selection: new vscode.Range(element.LineNumber - 1, 0, element.LineNumber - 1, 0) }],
+            };
             return treeItem;
         }
     }
@@ -88,7 +97,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         } else if (isSummaryEntry(element)) {
             return [];
         } else if (this.isFileMatch(element)) {
-            return element.LineMatches.map(lm => ({ ...lm, fileName: element.FileName }));
+            return element.LineMatches.map(lm => ({ ...lm, fileName: element.FileName, Repository: element.Repository }));
         }
         return [];
     }
@@ -112,4 +121,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
     }
 
+    private async getUriForFile(fileName: string, repository: string): Promise<vscode.Uri> {
+        return getUriForFile(fileName, repository);
+    }
 }
