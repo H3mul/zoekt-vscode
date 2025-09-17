@@ -3,7 +3,9 @@ import * as path from 'path';
 import { FileMatch, LineMatch } from '../types/zoekt';
 import { Buffer } from 'buffer';
 
-export type ResultEntry = FileMatch | LineMatch;
+export type LineMatchWithFileName = LineMatch & { fileName: string };
+
+export type ResultEntry = FileMatch | LineMatchWithFileName;
 
 function isFileMatch(element: ResultEntry): element is FileMatch {
     return (element as FileMatch).LineMatches !== undefined;
@@ -28,7 +30,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         } else {
             const treeItem = new vscode.TreeItem(this.makeTreeItemLabel(element), vscode.TreeItemCollapsibleState.None);
 
-            treeItem.tooltip = `:${element.LineNumber}`;
+            treeItem.tooltip = `${element.fileName}:${element.LineNumber}`;
             return treeItem;
         }
     }
@@ -61,7 +63,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     public getChildren(element?: ResultEntry | undefined): vscode.ProviderResult<ResultEntry[]> {
         if (element) {
             if (this.isFileMatch(element)) {
-                return element.LineMatches;
+                return element.LineMatches.map(lm => ({ ...lm, fileName: element.FileName }));
             }
             return [];
         }

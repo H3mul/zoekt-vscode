@@ -13,7 +13,7 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
         const queryHistorySize = vscode.workspace.getConfiguration('zoekt').get<number>('queryHistorySize', 5);
         const updatedQueries = [query, ...cachedQueries.filter(q => q !== query)].slice(0, queryHistorySize); // Keep last 'queryHistorySize' queries
 
-        await context.globalState.update('zoekt.cachedQueries', updatedQueries);
+        await context.workspaceState.update('zoekt.cachedQueries', updatedQueries);
     } catch (error: any) {
         vscode.window.showErrorMessage(error.message);
     }
@@ -28,7 +28,7 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         }
         zoektService.setApiUrl(apiUrl);
 
-        const cachedQueries: string[] = context.globalState.get('zoekt.cachedQueries', []);
+        const cachedQueries: string[] = context.workspaceState.get('zoekt.cachedQueries', []);
 
         const quickPick = vscode.window.createQuickPick();
         quickPick.title = 'Zoekt Search';
