@@ -59,27 +59,3 @@ export function findTargetRepo(repository: string): any | undefined {
                           .includes(repository)
     );
 }
-
-export async function getUriForFile(fileName: string, repository: string): Promise<vscode.Uri> {
-    const workspaceFolders = vscode.workspace.workspaceFolders || [];
-
-    const targetRepo = findTargetRepo(repository);
-
-    // Try to match the zoekt result to a known git repository root first
-    if (targetRepo) {
-        return vscode.Uri.joinPath(targetRepo.rootUri, fileName);
-    }
-
-    // Try to find the file in the workspace folders
-    for (const folder of workspaceFolders) {
-        const fileUri = vscode.Uri.joinPath(folder.uri, fileName);
-        try {
-            await vscode.workspace.fs.stat(fileUri);
-            return fileUri;
-        } catch (error) {
-            // File does not exist in this workspace folder, continue to the next
-        }
-    }
-
-    return vscode.Uri.file(fileName);
-}

@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { FileMatch, LineMatch } from '../types/zoekt';
 import { Buffer } from 'buffer';
-import { getGitExtensionApi, findTargetRepo, getUriForFile } from '../utils/git';
+import { getUriForFile } from '../utils/fileUtils';
+import { findTargetRepo } from '../utils/gitUtils';
 
 export type LineMatchWithFileName = LineMatch & { fileName: string, Repository: string };
 
@@ -42,22 +43,33 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             const treeItem = new vscode.TreeItem(fileName, vscode.TreeItemCollapsibleState.Expanded);
             treeItem.description = dirName;
             treeItem.tooltip = element.FileName;
+            const uri = await this.getUriForMatch(element.Repository, element.FileName);
             treeItem.command = {
                 command: 'vscode.open',
                 title: 'Open File',
-                arguments: [await this.getUriForFile(element.FileName, element.Repository)],
+                arguments: [uri],
             };
             return treeItem;
         } else {
             const treeItem = new vscode.TreeItem(this.makeTreeItemLabel(element), vscode.TreeItemCollapsibleState.None);
 
             treeItem.tooltip = `${element.fileName}:${element.LineNumber}`;
+            const uri = await this.getUriForMatch(element.Repository, element.fileName);
             treeItem.command = {
                 command: 'vscode.open',
                 title: 'Open File',
-                arguments: [await this.getUriForFile(element.fileName, element.Repository), { selection: new vscode.Range(element.LineNumber - 1, 0, element.LineNumber - 1, 0) }],
+                arguments: [uri, { selection: new vscode.Range(element.LineNumber - 1, 0, element.LineNumber - 1, 0) }],
             };
             return treeItem;
+        }
+    }
+
+    private async getUriForMatch(repository: string, fileName: string): Promise<vscode.Uri> {
+        const targetRepo = findTargetRepo(repository);
+        if (targetRepo) {
+            return vscode.Uri.joinPath(targetRepo.rootUri, fileName);
+        } else {
+            return await getUriForFile(fileName);
         }
     }
 
@@ -91,9 +103,8 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             const summaryElement = this.getSummaryElement();
             if (this.results.length > 0 || this.totalMatches > 0) {
                 return [summaryElement, ...this.results];
-            } else {
-                return [summaryElement];
             }
+            return [summaryElement];
         } else if (isSummaryEntry(element)) {
             return [];
         } else if (this.isFileMatch(element)) {
@@ -119,9 +130,5 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
 
     private isFileMatch(element: ResultEntry): element is FileMatch {
         return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
-    }
-
-    private async getUriForFile(fileName: string, repository: string): Promise<vscode.Uri> {
-        return getUriForFile(fileName, repository);
     }
 }
