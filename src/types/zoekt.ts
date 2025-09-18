@@ -1,33 +1,8 @@
-import { VerifyJsonWebKeyInput } from "crypto";
-
-export interface SearchResult {
-    filePath: string;
-    lineNumber: number;
-    snippet: string;
-    repository: string;
-}
-
-export interface SearchOptions {
-    ChunkMatches: boolean;
-    NumContextLines: number;
-    MaxDocDisplayCount: number;
-    MaxMatchDisplayCount: number;
-    ShardMaxMatchCount: number;
-    TotalMaxMatchCount: number;
-}
+import { SearchOptions } from "./search";
 
 export interface ZoektSearchRequest {
     Q: string;
-    RepoIDs?: number[];
     Opts?: SearchOptions;
-}
-
-export interface SearchQuery {
-    query: string;
-    contextLines?: number;
-    files?: number;
-    matches?: number;
-    repoList?: string[];
 }
 
 export interface ZoektSearchResponse {

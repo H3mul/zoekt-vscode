@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ZoektService } from './services/zoektService';
 import { SearchResultsProvider } from './providers/searchResultsProvider';
-import { SearchQuery } from './types/zoekt';
+import { SearchQuery } from './types/search';
 import { getGitExtensionApi, getRepoNamesFromGitApi } from './utils/gitUtils';
 
 interface CachedQuery {
