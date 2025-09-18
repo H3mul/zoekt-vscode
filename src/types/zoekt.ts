@@ -1,3 +1,5 @@
+import { VerifyJsonWebKeyInput } from "crypto";
+
 export interface SearchResult {
     filePath: string;
     lineNumber: number;
@@ -31,15 +33,17 @@ export interface SearchQuery {
 export interface ZoektSearchResponse {
     Result: {
         Files: FileMatch[];
+        RepoURLs: Map<RepoName, ZoektTemplate>;
+        LineFragments: Map<RepoName, ZoektTemplate>;
     };
 }
 
 export interface FileMatch {
     FileName: string;
-    Repository: string;
+    Repository: RepoName;
+    Version: Version;
     LineMatches: LineMatch[];
 }
-
 
 export interface LineMatch {
     Line: string;
@@ -54,3 +58,12 @@ export interface LineFragment {
     Offset: number;
     MatchLength: number;
 }
+
+// Zoekt repo name - domain + path without .git suffix
+export type RepoName = string;
+
+// Template to construct string from constituent variables
+export type ZoektTemplate = string;
+
+// Git ref
+export type Version = string;
