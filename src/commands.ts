@@ -113,6 +113,7 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
             quickPick.hide();
             if (searchQuery) {
                 await performSearch(searchQuery, zoektService, searchResultsProvider, context, cachedQueries, searchAllReposSelection);
+                vscode.commands.executeCommand('workbench.view.extension.zoekt-sidebar'); // Focus on the search results window
             }
         });
 
