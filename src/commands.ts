@@ -21,27 +21,28 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
 
         const searchQuery: SearchQuery = { query: query, repoList: repoList };
         const results = await zoektService.search(searchQuery);
-        if (!results || !results.Result || results.Result.Files.length === 0) {
+        if (!results?.Result?.Files?.length) {
             vscode.window.showInformationMessage('Zoekt: No results found.');
-            searchResultsProvider.setResults({ Result: { Files: [], RepoURLs: {}, LineFragments: {}, DurationMs: 0 } }, 0, searchAllRepos, 0);
+            searchResultsProvider.setResults({ Result: { Files: [], RepoURLs: {}, LineFragments: {}, DurationMs: 0 } }, 0, searchAllRepos, 0, query);
             return;
         }
         
         const totalMatches = results.Result.Files.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
-        searchResultsProvider.setResults(results, totalMatches, searchAllRepos, results.Result.DurationMs);
+        searchResultsProvider.setResults(results, totalMatches, searchAllRepos, results.Result.DurationMs, query);
 
         // Update cached queries
         const queryHistorySize = vscode.workspace.getConfiguration('zoekt').get<number>('queryHistorySize', 5);
         const updatedQueries = [{ query: query, count: totalMatches, durationMs: results.Result.DurationMs, searchAllRepos: searchAllRepos }, ...cachedQueries.filter(q => q.query !== query)].slice(0, queryHistorySize);
 
         await context.workspaceState.update('zoekt.cachedQueries', updatedQueries);
+        await context.workspaceState.update('zoekt.searchAllReposSelection', searchAllRepos);
     } catch (error: any) {
         vscode.window.showErrorMessage(error.message);
     }
 }
 
 export function registerCommands(context: vscode.ExtensionContext, zoektService: ZoektService, searchResultsProvider: SearchResultsProvider) {
-    const searchCommand = vscode.commands.registerCommand('zoekt.search', async () => {
+    const searchCommand = vscode.commands.registerCommand('zoekt.search', async (initialQuery?: string, initialSearchAllRepos?: boolean) => {
         const apiUrl = vscode.workspace.getConfiguration('zoekt').get<string>('apiUrl');
         if (!apiUrl) {
             vscode.window.showErrorMessage('Zoekt API URL not configured.');
@@ -50,6 +51,7 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         zoektService.setApiUrl(apiUrl);
 
         const cachedQueries: CachedQuery[] = context.workspaceState.get('zoekt.cachedQueries', []);
+        let persistedSearchAllRepos = context.workspaceState.get<boolean>('zoekt.searchAllReposSelection', false);
 
         const quickPick = vscode.window.createQuickPick();
         quickPick.title = 'Zoekt Search';
@@ -63,39 +65,45 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         quickPick.matchOnDescription = true;
         quickPick.matchOnDetail = true;
 
-        let searchAllRepos = false;
+        let searchAllReposSelection = initialSearchAllRepos ?? persistedSearchAllRepos;
         const gitApi = getGitExtensionApi();
         if (!gitApi || !gitApi.repositories.length) {
-            searchAllRepos = true; // Default to all repos if not a git project
+            searchAllReposSelection = true; // Default to all repos if not a git project
+        }
+
+        // Only prefill quickPick.value if initialQuery is a non-empty string
+        if (typeof initialQuery === 'string' && initialQuery.length > 0) {
+            quickPick.value = initialQuery;
         }
 
         const updateQuickPickButtons = () => {
             quickPick.buttons = [
                 {
-                    iconPath: new vscode.ThemeIcon(searchAllRepos ? 'globe' : 'repo'),
-                    tooltip: searchAllRepos ? 'Searching all repositories' : 'Searching current repository',
+                    iconPath: new vscode.ThemeIcon(searchAllReposSelection ? 'globe' : 'repo'),
+                    tooltip: searchAllReposSelection ? 'Searching all repositories' : 'Searching current repository',
                 },
             ];
         };
 
         updateQuickPickButtons();
 
-        quickPick.onDidTriggerButton(e => {
-            searchAllRepos = !searchAllRepos;
+        quickPick.onDidTriggerButton(async e => {
+            searchAllReposSelection = !searchAllReposSelection;
+            await context.workspaceState.update('zoekt.searchAllReposSelection', searchAllReposSelection);
             updateQuickPickButtons();
         });
 
-        let query: string | undefined;
+        let searchQuery: string | undefined;
 
         quickPick.onDidAccept(async () => {
             if (quickPick.value) {
-                query = quickPick.value;
+                searchQuery = quickPick.value;
             } else if (quickPick.selectedItems.length > 0) {
-                query = quickPick.selectedItems[0].label;
+                searchQuery = quickPick.selectedItems[0].label;
             }
             quickPick.hide();
-            if (query) {
-                await performSearch(query, zoektService, searchResultsProvider, context, cachedQueries, searchAllRepos);
+            if (searchQuery) {
+                await performSearch(searchQuery, zoektService, searchResultsProvider, context, cachedQueries, searchAllReposSelection);
             }
         });
 

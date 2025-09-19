@@ -12,7 +12,7 @@ interface SummaryEntry {
     type: 'summary';
 }
 
-function getSummaryElement(): SummaryEntry {
+function getSummaryElement(query: string, searchAllRepos: boolean): SummaryEntry {
     return { type: 'summary' };
 }
 
@@ -39,17 +39,14 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     public async getTreeItem(element: ResultEntry): Promise<vscode.TreeItem> {
         if (isSummaryEntry(element)) {
             const icon = this.searchAllRepos ? 'globe' : 'repo';
-            const label = `${this.totalMatches} hits (${this.queryDurationMs}ms)`;
+            const label = `Query Results: ${this.totalMatches} hits (${this.queryDurationMs}ms)`;
             const treeItem = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
             treeItem.iconPath = new vscode.ThemeIcon(icon);
-            treeItem.tooltip = `Query: "${this.query}"`;
+            treeItem.tooltip = `Query: ${this.query}`;
             treeItem.command = {
                 command: 'zoekt.search',
-                title: 'Rerun Search',
-                arguments: [{
-                    query: this.query,
-                    searchAllRepos: this.searchAllRepos,
-                }],
+                title: 'Search Zoekt',
+                arguments: [this.query, this.searchAllRepos],
             };
             return treeItem;
         } else if (isFileMatch(element)) {
@@ -157,7 +154,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
 
     public getChildren(element?: ResultEntry | undefined): vscode.ProviderResult<ResultEntry[]> {
         if (!element) {
-            const summaryElement = getSummaryElement();
+            const summaryElement = getSummaryElement('', false);
             if (this.zoektResponse?.Result?.Files && this.zoektResponse.Result.Files.length > 0 || this.totalMatches > 0) {
                 return [summaryElement, ...(this.zoektResponse?.Result?.Files || [])];
             }
