@@ -43,6 +43,16 @@
         "command": "zoekt.clearHistory",
         "title": "Zoekt: Clear Search History",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "zoekt.dismissResult",
+        "title": "Dismiss Result",
+        "icon": "$(close)"
+      },
+      {
+        "command": "zoekt.dismissAllResults",
+        "title": "Dismiss All Results",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
@@ -58,7 +68,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "zoekt.clearHistory",
+          "command": "zoekt.dismissAllResults",
           "when": "view == searchResults",
           "group": "navigation@2"
         }
@@ -67,6 +77,13 @@
         {
           "command": "zoekt.clearHistory",
           "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "zoekt.dismissResult",
+          "when": "view == searchResults && viewItem != summary",
+          "group": "inline"
         }
       ]
     },

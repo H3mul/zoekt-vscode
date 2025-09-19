@@ -48,6 +48,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
                 title: 'Search Zoekt',
                 arguments: [this.query, this.searchAllRepos],
             };
+            treeItem.contextValue = 'summary';
             return treeItem;
         } else if (isFileMatch(element)) {
             const fileName = path.basename(element.FileName);
@@ -65,6 +66,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             if (this.searchAllRepos && !findTargetRepo(element.Repository)) {
                 treeItem.iconPath = new vscode.ThemeIcon('go-to-file');
             }
+            treeItem.contextValue = 'fileMatch';
             return treeItem;
         } else {
             // LineMatch case
@@ -80,6 +82,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
                 title: 'Open File',
                 arguments: args,
             };
+            treeItem.contextValue = 'lineMatch';
             return treeItem;
         }
     }
@@ -177,6 +180,31 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     }
 
     public refresh(): void {
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    public dismissElement(element: ResultEntry): void {
+        if (isFileMatch(element)) {
+            this.zoektResponse!.Result!.Files = this.zoektResponse!.Result!.Files!.filter(file => file !== element);
+        } else if (!isSummaryEntry(element)) {
+            // It's a LineMatchWithFileRef
+            const fileMatch = this.zoektResponse!.Result!.Files!.find(file => file.FileName === element.FileName && file.Repository === element.Repository);
+            if (fileMatch) {
+                fileMatch.LineMatches = fileMatch.LineMatches.filter(line => line.LineNumber !== element.LineNumber);
+                if (fileMatch.LineMatches.length === 0) {
+                    this.dismissElement(fileMatch); // Dismiss the file if no line matches are left
+                }
+            }
+        }
+        this.totalMatches = this.zoektResponse?.Result?.Files?.reduce((acc, file) => acc + file.LineMatches.length, 0) || 0;
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    public dismissAll(): void {
+        this.zoektResponse = undefined;
+        this.totalMatches = 0;
+        this.queryDurationMs = 0;
+        this.query = '';
         this._onDidChangeTreeData.fire(undefined);
     }
 

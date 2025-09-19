@@ -82,15 +82,24 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
                     iconPath: new vscode.ThemeIcon(searchAllReposSelection ? 'globe' : 'repo'),
                     tooltip: searchAllReposSelection ? 'Searching all repositories' : 'Searching current repository',
                 },
+                {
+                    iconPath: new vscode.ThemeIcon('clear-all'),
+                    tooltip: 'Clear search history',
+                },
             ];
         };
 
         updateQuickPickButtons();
 
         quickPick.onDidTriggerButton(async e => {
-            searchAllReposSelection = !searchAllReposSelection;
-            await context.workspaceState.update('zoekt.searchAllReposSelection', searchAllReposSelection);
-            updateQuickPickButtons();
+            if (e.tooltip === 'Clear search history') {
+                vscode.commands.executeCommand('zoekt.clearHistory');
+                quickPick.items = []; // Clear displayed quickpick items
+            } else {
+                searchAllReposSelection = !searchAllReposSelection;
+                await context.workspaceState.update('zoekt.searchAllReposSelection', searchAllReposSelection);
+                updateQuickPickButtons();
+            }
         });
 
         let searchQuery: string | undefined;
@@ -120,5 +129,15 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         vscode.window.showInformationMessage('Zoekt search history cleared.');
     });
 
-    context.subscriptions.push(searchCommand, collapseAllCommand, clearHistoryCommand);
+    const dismissResultCommand = vscode.commands.registerCommand('zoekt.dismissResult', (element) => searchResultsProvider.dismissElement(element));
+
+    const dismissAllResultsCommand = vscode.commands.registerCommand('zoekt.dismissAllResults', () => searchResultsProvider.dismissAll());
+
+    context.subscriptions.push(
+        searchCommand,
+        collapseAllCommand,
+        clearHistoryCommand,
+        dismissResultCommand,
+        dismissAllResultsCommand
+    );
 }
