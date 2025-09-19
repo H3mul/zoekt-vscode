@@ -35,6 +35,11 @@
         "icon": "$(search)"
       },
       {
+        "command": "zoekt.searchSelection",
+        "title": "Zoekt: Search",
+        "icon": "$(search)"
+      },
+      {
         "command": "zoekt.collapseAll",
         "title": "Collapse All",
         "icon": "$(collapse-all)"
@@ -73,9 +78,15 @@
           "group": "navigation@2"
         }
       ],
+      "editor/context": [
+        {
+          "command": "zoekt.searchSelection",
+          "group": "zoekt@1"
+        }
+      ],
       "commandPalette": [
         {
-          "command": "zoekt.clearHistory",
+          "command": "zoekt.search",
           "when": "false"
         }
       ],
@@ -104,7 +115,7 @@
     },
     "keybindings": [
       {
-        "command": "zoekt.search",
+        "command": "zoekt.searchSelection",
         "key": "ctrl+alt+k"
       }
     ]

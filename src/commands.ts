@@ -134,11 +134,21 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
 
     const dismissAllResultsCommand = vscode.commands.registerCommand('zoekt.dismissAllResults', () => searchResultsProvider.dismissAll());
 
+    const searchSelectionCommand = vscode.commands.registerCommand('zoekt.searchSelection', async () => {
+        const editor = vscode.window.activeTextEditor;
+        let selectedText = '';
+        if (editor && !editor.selection.isEmpty) {
+            selectedText = editor.document.getText(editor.selection);
+        }
+        vscode.commands.executeCommand('zoekt.search', selectedText);
+    });
+
     context.subscriptions.push(
         searchCommand,
         collapseAllCommand,
         clearHistoryCommand,
         dismissResultCommand,
-        dismissAllResultsCommand
+        dismissAllResultsCommand,
+        searchSelectionCommand
     );
 }
