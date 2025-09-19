@@ -28,7 +28,7 @@ export class ZoektService {
         }
     }
 
-    public async search({query, contextLines, files, matches, repoList}: SearchQuery): Promise<FileMatch[]> {
+    public async search({query, contextLines, files, matches, repoList}: SearchQuery): Promise<ZoektSearchResponse> {
         let queryString = query;
         if (repoList && repoList.length > 0) {
             const repoQuery = repoList.map(repo => `repo:${repo}`).join(" or ");
@@ -50,6 +50,6 @@ export class ZoektService {
             },
         };
         const response = await this.zoektRequest<ZoektSearchResponse>('/api/search', searchRequest);
-        return response.Result.Files;
+        return response;
     }
 }

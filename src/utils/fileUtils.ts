@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export async function getUriForFile(fileName: string): Promise<vscode.Uri> {
+export async function getUriForFile(fileName: string): Promise<vscode.Uri | null> {
     const workspaceFolders = vscode.workspace.workspaceFolders || [];
 
     // Try to find the file in the workspace folders
@@ -14,5 +14,5 @@ export async function getUriForFile(fileName: string): Promise<vscode.Uri> {
         }
     }
 
-    return vscode.Uri.file(fileName);
+    return null;
 }

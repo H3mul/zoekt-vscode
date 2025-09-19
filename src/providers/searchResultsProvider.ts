@@ -1,17 +1,22 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { FileMatch, LineMatch } from '../types/zoekt';
+import { FileMatch, LineMatch, ZoektSearchResponse } from '../types/zoekt';
 import { Buffer } from 'buffer';
 import { getUriForFile } from '../utils/fileUtils';
 import { findTargetRepo } from '../utils/gitUtils';
+import { evaluateFileUrlTemplate } from '../utils/urlTemplates';
 
-export type LineMatchWithFileName = LineMatch & { fileName: string, Repository: string };
+export type LineMatchWithFileRef = LineMatch & { FileName: string, Repository: string, Version: string };
 
 interface SummaryEntry {
     type: 'summary';
 }
 
-export type ResultEntry = FileMatch | LineMatchWithFileName | SummaryEntry;
+function getSummaryElement(): SummaryEntry {
+    return { type: 'summary' };
+}
+
+export type ResultEntry = FileMatch | LineMatchWithFileRef | SummaryEntry;
 
 function isFileMatch(element: ResultEntry): element is FileMatch {
     return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
@@ -25,7 +30,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     private _onDidChangeTreeData: vscode.EventEmitter<ResultEntry | undefined | null> = new vscode.EventEmitter<ResultEntry | undefined | null>();
     readonly onDidChangeTreeData: vscode.Event<ResultEntry | undefined | null> = this._onDidChangeTreeData.event;
 
-    private results: FileMatch[] = [];
+    private zoektResponse: ZoektSearchResponse | undefined;
     private totalMatches: number = 0;
     private searchAllRepos: boolean = false;
 
@@ -42,8 +47,8 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
 
             const treeItem = new vscode.TreeItem(fileName, vscode.TreeItemCollapsibleState.Expanded);
             treeItem.description = dirName;
-            treeItem.tooltip = element.FileName;
-            const uri = await this.getUriForMatch(element.Repository, element.FileName);
+            treeItem.tooltip = this.getDisplayFileName(element);
+            const uri = await this.getUriForMatch(element);
             treeItem.command = {
                 command: 'vscode.open',
                 title: 'Open File',
@@ -51,26 +56,64 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             };
             return treeItem;
         } else {
+            // LineMatch case
             const treeItem = new vscode.TreeItem(this.makeTreeItemLabel(element), vscode.TreeItemCollapsibleState.None);
-
-            treeItem.tooltip = `${element.fileName}:${element.LineNumber}`;
-            const uri = await this.getUriForMatch(element.Repository, element.fileName);
+            treeItem.tooltip = this.getDisplayFileName(element);
+            const uri = await this.getUriForMatch(element);
+            const args: any[] = [uri];
+            if (['file'].includes(uri.scheme)) {
+                args.push({ selection: new vscode.Range(element.LineNumber - 1, 0, element.LineNumber - 1, 0) });
+            }
             treeItem.command = {
                 command: 'vscode.open',
                 title: 'Open File',
-                arguments: [uri, { selection: new vscode.Range(element.LineNumber - 1, 0, element.LineNumber - 1, 0) }],
+                arguments: args,
             };
             return treeItem;
         }
     }
 
-    private async getUriForMatch(repository: string, fileName: string): Promise<vscode.Uri> {
+    private async getUriForMatch(match: FileMatch | LineMatchWithFileRef): Promise<vscode.Uri> {
+        const repository = match.Repository;
+        const fileName = match.FileName;
+        const version = match.Version;
+
         const targetRepo = findTargetRepo(repository);
         if (targetRepo) {
             return vscode.Uri.joinPath(targetRepo.rootUri, fileName);
-        } else {
-            return await getUriForFile(fileName);
         }
+
+        const localFileUri = await getUriForFile(fileName);
+        if (localFileUri) {
+            return localFileUri;
+        }
+
+        // TODO: Doesnt work at the moment, needs a deep dive into github repositories extension.
+        //       Would be nice.
+        // const isGitHubUrl = repository.includes('github.com');
+        // if (isGitHubUrl) {
+        //     const parts = repository.split('/');
+        //     const owner = parts[1];
+        //     const repo = parts[2];
+        //     const githubUri = `github:/${owner}/${repo}/${fileName}?ref=${version}`;
+        //     return vscode.Uri.parse(githubUri);
+        // }
+
+        if (this.zoektResponse?.Result?.RepoURLs) {
+            const repoUrlTemplate = this.zoektResponse.Result.RepoURLs[repository];
+            if (repoUrlTemplate) {
+                let fileUrl: string;
+                if (!isFileMatch(match) && this.zoektResponse.Result.LineFragments) {
+                    const lineFragmentTemplate = this.zoektResponse.Result.LineFragments[repository];
+                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName, lineFragmentTemplate, match.LineNumber);
+                } else {
+                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName);
+                }
+                return vscode.Uri.parse(fileUrl);
+            }
+        }
+
+        return vscode.Uri.file(fileName);
     }
 
     private makeTreeItemLabel(lineMatch: LineMatch): vscode.TreeItemLabel {
@@ -100,21 +143,21 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
 
     public getChildren(element?: ResultEntry | undefined): vscode.ProviderResult<ResultEntry[]> {
         if (!element) {
-            const summaryElement = this.getSummaryElement();
-            if (this.results.length > 0 || this.totalMatches > 0) {
-                return [summaryElement, ...this.results];
+            const summaryElement = getSummaryElement();
+            if (this.zoektResponse?.Result?.Files && this.zoektResponse.Result.Files.length > 0 || this.totalMatches > 0) {
+                return [summaryElement, ...(this.zoektResponse?.Result?.Files || [])];
             }
             return [summaryElement];
         } else if (isSummaryEntry(element)) {
             return [];
-        } else if (this.isFileMatch(element)) {
-            return element.LineMatches.map(lm => ({ ...lm, fileName: element.FileName, Repository: element.Repository }));
+        } else if (isFileMatch(element)) {
+            return element.LineMatches.map(lm => ({ ...lm, FileName: element.FileName, Repository: element.Repository, Version: element.Version }));
         }
         return [];
     }
 
-    public setResults(results: FileMatch[], totalMatches: number, searchAllRepos: boolean): void {
-        this.results = results;
+    public setResults(response: ZoektSearchResponse, totalMatches: number, searchAllRepos: boolean): void {
+        this.zoektResponse = response;
         this.totalMatches = totalMatches;
         this.searchAllRepos = searchAllRepos;
         this._onDidChangeTreeData.fire(undefined);
@@ -124,11 +167,11 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         this._onDidChangeTreeData.fire(undefined);
     }
 
-    private getSummaryElement(): SummaryEntry {
-        return { type: 'summary' };
-    }
-
-    private isFileMatch(element: ResultEntry): element is FileMatch {
-        return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
+    private getDisplayFileName(match: FileMatch | LineMatchWithFileRef): string {
+        if (isFileMatch(match)) {
+            return `${match.Repository}/${match.FileName}`;
+        } else {
+            return `${match.Repository}/${match.FileName}:${match.LineNumber}`;
+        }
     }
 }

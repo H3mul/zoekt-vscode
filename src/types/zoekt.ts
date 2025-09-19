@@ -8,8 +8,8 @@ export interface ZoektSearchRequest {
 export interface ZoektSearchResponse {
     Result: {
         Files: FileMatch[];
-        RepoURLs: Map<RepoName, ZoektTemplate>;
-        LineFragments: Map<RepoName, ZoektTemplate>;
+        RepoURLs: {[key:RepoName]: ZoektTemplate};
+        LineFragments: {[key:RepoName]: ZoektTemplate};
     };
 }
 

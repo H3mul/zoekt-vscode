@@ -19,19 +19,18 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
 
         const searchQuery: SearchQuery = { query: query, repoList: repoList };
         const results = await zoektService.search(searchQuery);
-        if (!results || results.length === 0) {
+        if (!results || !results.Result || results.Result.Files.length === 0) {
             vscode.window.showInformationMessage('Zoekt: No results found.');
-            searchResultsProvider.setResults([], 0, searchAllRepos);
+            searchResultsProvider.setResults({ Result: { Files: [], RepoURLs: {}, LineFragments: {} } }, 0, searchAllRepos);
             return;
         }
-        const totalMatches = results.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
+        
+        const totalMatches = results.Result.Files.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
         searchResultsProvider.setResults(results, totalMatches, searchAllRepos);
 
         // Update cached queries
         const queryHistorySize = vscode.workspace.getConfiguration('zoekt').get<number>('queryHistorySize', 5);
-        const matches = results.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
-
-        const updatedQueries = [{ query: query, count: matches }, ...cachedQueries.filter(q => q.query !== query)].slice(0, queryHistorySize); // Keep last 'queryHistorySize' queries
+        const updatedQueries = [{ query: query, count: totalMatches }, ...cachedQueries.filter(q => q.query !== query)].slice(0, queryHistorySize); // Keep last 'queryHistorySize' queries
 
         await context.workspaceState.update('zoekt.cachedQueries', updatedQueries);
     } catch (error: any) {
