@@ -101,7 +101,13 @@
           "description": "The maximum number of search queries to cache in history."
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "zoekt.search",
+        "key": "ctrl+alt+k"
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -p ./",
