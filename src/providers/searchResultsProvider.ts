@@ -33,13 +33,24 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     private zoektResponse: ZoektSearchResponse | undefined;
     private totalMatches: number = 0;
     private searchAllRepos: boolean = false;
+    private queryDurationMs: number = 0;
+    private query: string = '';
 
     public async getTreeItem(element: ResultEntry): Promise<vscode.TreeItem> {
         if (isSummaryEntry(element)) {
             const icon = this.searchAllRepos ? 'globe' : 'repo';
-            const label = `${this.totalMatches} hits ${this.searchAllRepos ? '(Searching all repositories)' : '(Current Project)'}`;
+            const label = `${this.totalMatches} hits (${this.queryDurationMs}ms)`;
             const treeItem = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
             treeItem.iconPath = new vscode.ThemeIcon(icon);
+            treeItem.tooltip = `Query: "${this.query}"`;
+            treeItem.command = {
+                command: 'zoekt.search',
+                title: 'Rerun Search',
+                arguments: [{
+                    query: this.query,
+                    searchAllRepos: this.searchAllRepos,
+                }],
+            };
             return treeItem;
         } else if (isFileMatch(element)) {
             const fileName = path.basename(element.FileName);
@@ -55,7 +66,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
                 arguments: [uri],
             };
             if (this.searchAllRepos && !findTargetRepo(element.Repository)) {
-                treeItem.iconPath = new vscode.ThemeIcon('globe');
+                treeItem.iconPath = new vscode.ThemeIcon('go-to-file');
             }
             return treeItem;
         } else {
@@ -159,10 +170,12 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         return [];
     }
 
-    public setResults(response: ZoektSearchResponse, totalMatches: number, searchAllRepos: boolean): void {
+    public setResults(response: ZoektSearchResponse, totalMatches: number, searchAllRepos: boolean, queryDurationMs: number, query: string): void {
         this.zoektResponse = response;
         this.totalMatches = totalMatches;
         this.searchAllRepos = searchAllRepos;
+        this.queryDurationMs = queryDurationMs;
+        this.query = query;
         this._onDidChangeTreeData.fire(undefined);
     }
 

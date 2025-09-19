@@ -11,16 +11,19 @@ export class ZoektService {
         this.apiUrl = apiUrl;
     }
 
-    private async zoektRequest<T>(endpoint: string, payload: any): Promise<T> {
+    private async zoektRequest<T extends ZoektSearchResponse>(endpoint: string, payload: any): Promise<T> {
         if (!this.apiUrl) {
             throw new Error('Zoekt API URL not configured.');
         }
         try {
+            const startTime = Date.now();
             const response = await axios.post<T>(`${this.apiUrl}${endpoint}`, payload, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
+            const endTime = Date.now();
+            response.data.Result.DurationMs = endTime - startTime;
             return response.data;
         } catch (error) {
             console.error(`Error fetching from Zoekt API endpoint ${endpoint}:`, error);

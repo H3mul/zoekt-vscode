@@ -7,6 +7,8 @@ import { getGitExtensionApi, getRepoNamesFromGitApi } from './utils/gitUtils';
 interface CachedQuery {
     query: string;
     count: number;
+    durationMs: number;
+    searchAllRepos: boolean;
 }
 
 async function performSearch(query: string, zoektService: ZoektService, searchResultsProvider: SearchResultsProvider, context: vscode.ExtensionContext, cachedQueries: CachedQuery[], searchAllRepos: boolean) {
@@ -21,16 +23,16 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
         const results = await zoektService.search(searchQuery);
         if (!results || !results.Result || results.Result.Files.length === 0) {
             vscode.window.showInformationMessage('Zoekt: No results found.');
-            searchResultsProvider.setResults({ Result: { Files: [], RepoURLs: {}, LineFragments: {} } }, 0, searchAllRepos);
+            searchResultsProvider.setResults({ Result: { Files: [], RepoURLs: {}, LineFragments: {}, DurationMs: 0 } }, 0, searchAllRepos, 0);
             return;
         }
         
         const totalMatches = results.Result.Files.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
-        searchResultsProvider.setResults(results, totalMatches, searchAllRepos);
+        searchResultsProvider.setResults(results, totalMatches, searchAllRepos, results.Result.DurationMs);
 
         // Update cached queries
         const queryHistorySize = vscode.workspace.getConfiguration('zoekt').get<number>('queryHistorySize', 5);
-        const updatedQueries = [{ query: query, count: totalMatches }, ...cachedQueries.filter(q => q.query !== query)].slice(0, queryHistorySize); // Keep last 'queryHistorySize' queries
+        const updatedQueries = [{ query: query, count: totalMatches, durationMs: results.Result.DurationMs, searchAllRepos: searchAllRepos }, ...cachedQueries.filter(q => q.query !== query)].slice(0, queryHistorySize);
 
         await context.workspaceState.update('zoekt.cachedQueries', updatedQueries);
     } catch (error: any) {
@@ -52,7 +54,11 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         const quickPick = vscode.window.createQuickPick();
         quickPick.title = 'Zoekt Search';
         quickPick.placeholder = 'Enter search query or select a recent one';
-        quickPick.items = cachedQueries.map(q => ({ label: q.query, description: `(${q.count} hits)` }));
+        quickPick.items = cachedQueries.map(q => ({
+            label: q.query,
+            description: `${q.count} hits (${q.durationMs}ms)`,
+            iconPath: new vscode.ThemeIcon(q.searchAllRepos ? 'globe' : 'repo'),
+        }));
         quickPick.canSelectMany = false;
         quickPick.matchOnDescription = true;
         quickPick.matchOnDetail = true;

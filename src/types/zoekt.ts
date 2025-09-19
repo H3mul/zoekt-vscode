@@ -5,12 +5,22 @@ export interface ZoektSearchRequest {
     Opts?: SearchOptions;
 }
 
-export interface ZoektSearchResponse {
-    Result: {
-        Files: FileMatch[];
-        RepoURLs: {[key:RepoName]: ZoektTemplate};
-        LineFragments: {[key:RepoName]: ZoektTemplate};
-    };
+export interface ZoektBaseResponse {
+    Result: ZoektBaseResult;
+}
+
+export interface ZoektBaseResult {
+    DurationMs: number;
+}
+
+export interface ZoektSearchResult extends ZoektBaseResult {
+    Files: FileMatch[];
+    RepoURLs: {[key:RepoName]: ZoektTemplate};
+    LineFragments: {[key:RepoName]: ZoektTemplate};
+}
+
+export interface ZoektSearchResponse extends ZoektBaseResponse {
+    Result: ZoektSearchResult;
 }
 
 export interface FileMatch {
