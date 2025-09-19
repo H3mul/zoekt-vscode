@@ -54,6 +54,9 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
                 title: 'Open File',
                 arguments: [uri],
             };
+            if (this.searchAllRepos && !findTargetRepo(element.Repository)) {
+                treeItem.iconPath = new vscode.ThemeIcon('globe');
+            }
             return treeItem;
         } else {
             // LineMatch case
@@ -168,10 +171,11 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     }
 
     private getDisplayFileName(match: FileMatch | LineMatchWithFileRef): string {
+        const isLocalRepo = findTargetRepo(match.Repository);
         if (isFileMatch(match)) {
-            return `${match.Repository}/${match.FileName}`;
+            return isLocalRepo ? match.FileName : `${match.Repository}/${match.FileName}`;
         } else {
-            return `${match.Repository}/${match.FileName}:${match.LineNumber}`;
+            return isLocalRepo ? `${match.FileName}:${match.LineNumber}` : `${match.Repository}/${match.FileName}:${match.LineNumber}`;
         }
     }
 }
