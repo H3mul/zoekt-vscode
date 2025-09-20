@@ -1,12 +1,26 @@
 {
-  "name": "vscode-zoekt-extension",
+  "name": "zoekt-vscode",
   "displayName": "Zoekt Code Search",
   "description": "An extension for searching code using the Zoekt JSON API.",
-  "version": "0.1.0",
-  "publisher": "your-name",
+  "icon": "media/zoekt-icon.png",
+  "version": "0.0.1",
+  "publisher": "h3mul",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/H3mul/zoekt-vscode"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "zoekt",
+    "search",
+    "code search",
+    "search extension"
+  ],
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
@@ -15,7 +29,7 @@
         {
           "id": "zoekt-sidebar",
           "title": "Zoekt Search",
-          "icon": "media/icon.svg"
+          "icon": "media/icons/zoekt-icon-light.svg"
         }
       ]
     },
@@ -99,11 +113,11 @@
       ]
     },
     "configuration": {
-      "title": "Zoekt Configuration",
+      "title": "Zoekt",
       "properties": {
         "zoekt.apiUrl": {
           "type": "string",
-          "default": "http://localhost:8080",
+          "default": "http://localhost:6070",
           "description": "The URL of the Zoekt API server."
         },
         "zoekt.queryHistorySize": {
@@ -116,7 +130,7 @@
     "keybindings": [
       {
         "command": "zoekt.searchSelection",
-        "key": "ctrl+alt+k"
+        "key": "ctrl+shift+k"
       }
     ]
   },
@@ -125,9 +139,10 @@
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^3.6.0",
     "ts-loader": "^9.5.4",
-    "typescript": "^5.9.2",
-    "@types/vscode": "^1.80.0"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "axios": "^1.12.2"
