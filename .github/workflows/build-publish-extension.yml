@@ -32,19 +32,18 @@ jobs:
 
     - name: Set outputs
       id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      run: |
+        export sha_short=$(git rev-parse --short HEAD)
+        echo "sha_short=$sha_short" >> $GITHUB_OUTPUT
+        echo "vsix_file=zoekt-vscode-${sha_short}.vsix" >> $GITHUB_OUTPUT
+        if [[ "${{ github.ref_name }}" =~ ^v[0-9] ]]; then
+          echo "version=$(echo "${{ github.ref_name }}" | sed 's/^v//')" >> $GITHUB_OUTPUT
+        else
+          echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
 
     - name: Package VSCode Extension
       run: vsce package --out zoekt-vscode-${{ steps.vars.outputs.sha_short }}.vsix
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: '*.vsix'
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Delete old release assets
       if: github.ref == 'refs/heads/main'
@@ -63,3 +62,25 @@ jobs:
         tag_name: CI
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: '*.vsix'
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Validate package.json version
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        VERSION=$(node -p "require('./package.json').version")
+        if [ "$VERSION" != "${{ steps.vars.outputs.version }}" ]; then
+          echo "package.json version ($VERSION) does not match tag version (${{ steps.vars.outputs.version }})"
+          exit 1
+        fi
+
+    - name: Package VSCode Extension
+      if: startsWith(github.ref, 'refs/tags/')
+      run: vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ${{ steps.vars.outputs.vsix_file }}
