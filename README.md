@@ -1,4 +1,4 @@
-<img src="media/icons/zoekt-icon-color.svg" width="150">
+<img src="media/icons/zoekt-icon.png" width="150">
 
 # Zoekt Code Search for Visual Studio Code
 
