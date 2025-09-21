@@ -1,24 +1,25 @@
-name: Build VSIX on Tag
+name: Build and package extension
 
 on:
+  workflow_dispatch:
   push:
-    tags:
-      - "v*"
     branches:
       - main
+    tags:
+      - "v*"
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16'
+      uses: actions/setup-node@v5
 
     - name: Install dependencies
       run: npm install
@@ -26,11 +27,39 @@ jobs:
     - name: Compile extension
       run: npm run compile
 
-    - name: Package VSIX
-      run: npx vsce package
+    - name: Install vsce
+      run: npm install -g vsce
 
-    - name: Upload VSIX artifact
-      uses: actions/upload-artifact@v4
+    - name: Set outputs
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Package VSCode Extension
+      run: vsce package --out zoekt-vscode-${{ steps.vars.outputs.sha_short }}.vsix
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: zoekt-vscode-extension
-        path: "*.vsix"
+        files: '*.vsix'
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Delete old release assets
+      if: github.ref == 'refs/heads/main'
+      uses: mknejp/delete-release-assets@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: CI
+        assets: '*.vsix'
+
+    - name: Create Pre-release
+      uses: softprops/action-gh-release@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        files: '*.vsix'
+        prerelease: true
+        tag_name: CI
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
