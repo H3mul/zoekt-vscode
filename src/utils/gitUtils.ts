@@ -36,12 +36,13 @@ export function getRepoNamesFromGitApi(): string[] {
     const repoList: string[] = [];
     const api = getGitExtensionApi();
     if (api && api.repositories.length > 0) {
-        const repository = api.repositories[0];
-        for (const remote of repository.state.remotes) {
-            if (remote.fetchUrl) {
-                const repoName = getRepoNameFromRemoteUrl(remote.fetchUrl);
-                if (repoName) {
-                    repoList.push(repoName);
+        for (const repository of api.repositories) {
+            for (const remote of repository.state.remotes) {
+                if (remote.fetchUrl) {
+                    const repoName = getRepoNameFromRemoteUrl(remote.fetchUrl);
+                    if (repoName) {
+                        repoList.push(repoName);
+                    }
                 }
             }
         }

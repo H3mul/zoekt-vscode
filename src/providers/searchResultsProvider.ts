@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { FileMatch, LineMatch, ZoektSearchResponse } from '../types/zoekt';
+import { FileMatch, LineFragment, LineMatch, ZoektSearchResponse } from '../types/zoekt';
 import { Buffer } from 'buffer';
 import { getUriForFile } from '../utils/fileUtils';
 import { findTargetRepo } from '../utils/gitUtils';
@@ -74,8 +74,11 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             treeItem.tooltip = this.getDisplayFileName(element);
             const uri = await this.getUriForMatch(element);
             const args: any[] = [uri];
+            const [matchStart, matchEnd] = this.getMatchRange(element.LineFragments);
+            const lineNumber = Math.max(element.LineNumber - 1, 0);
+
             if (['file'].includes(uri.scheme)) {
-                args.push({ selection: new vscode.Range(element.LineNumber - 1, 0, element.LineNumber - 1, 0) });
+                args.push({ selection: new vscode.Range(lineNumber, matchStart, lineNumber, matchEnd) });
             }
             treeItem.command = {
                 command: 'vscode.open',
@@ -130,11 +133,18 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         return vscode.Uri.file(fileName);
     }
 
+    private getMatchRange(lineFragments: LineFragment[]): [number, number] {
+        let matchStart = lineFragments.reduce((min, fragment) =>
+            Math.min(min, fragment.LineOffset), Number.MAX_SAFE_INTEGER);
+        let matchEnd = lineFragments.reduce((max, fragment) =>
+            Math.max(max, fragment.LineOffset + fragment.MatchLength), 0);
+        return [matchStart, matchEnd];
+    }
+
     private makeTreeItemLabel(lineMatch: LineMatch): vscode.TreeItemLabel {
         const decodedLine = Buffer.from(lineMatch.Line, 'base64').toString('utf8');
 
-        let matchStart = lineMatch.LineFragments.reduce((min, fragment) =>
-            Math.min(min, fragment.LineOffset), decodedLine.length);
+        const [matchStart, _] = this.getMatchRange(lineMatch.LineFragments);
 
         const ellipsis = '...';
         const ellipsisOffset = 25; // number of chars to show before/after highlight

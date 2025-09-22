@@ -35,7 +35,13 @@ export class ZoektService {
         let queryString = query;
         if (repoList && repoList.length > 0) {
             const repoQuery = repoList.map(repo => `repo:${repo}`).join(" or ");
-            queryString += ` ${repoQuery}`;
+
+            if (repoList.length > 1) {
+                queryString += ` (${repoQuery})`;
+            }
+            else {
+                queryString += ` ${repoQuery}`;
+            }
         }
 
         const searchRequest: ZoektSearchRequest = {
