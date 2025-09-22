@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ZoektService } from '../services/zoektService';
 import { Buffer } from 'buffer';
+import { RemoteFile } from '../types/search';
 
 export class ZoektTextDocumentProvider implements vscode.TextDocumentContentProvider {
     constructor(private zoektService: ZoektService) { }
@@ -32,4 +33,20 @@ export class ZoektTextDocumentProvider implements vscode.TextDocumentContentProv
             return `Error fetching content from Zoekt: ${error.message}`;
         }
     }
+}
+
+export function parseUri(uri: vscode.Uri): RemoteFile | undefined {
+    if (uri.scheme !== 'zoekt-remote') {
+        return undefined;
+    }
+    // Parse the URI to extract repo, branch, and file
+    const fileName = uri.path.startsWith('/') ? uri.path.substring(1) : uri.path;
+    const params = new URLSearchParams(uri.query);
+    const version = params.get('version');
+    const repository = params.get('repo');
+
+    if (!repository || !version || !fileName) {
+        return undefined;
+    }
+    return { repository, fileName, version };
 }

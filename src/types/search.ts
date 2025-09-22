@@ -10,3 +10,9 @@ export interface FetchFile {
     repo: string;
     branch: string;
 }
+export interface RemoteFile {
+    repository: string;
+    fileName: string;
+    version: string;
+    lineNumber?: number;
+}

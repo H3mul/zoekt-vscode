@@ -4,16 +4,12 @@ import { FileMatch, LineFragment, LineMatch, ZoektSearchResponse } from '../type
 import { Buffer } from 'buffer';
 import { getUriForFile } from '../utils/fileUtils';
 import { findTargetRepo } from '../utils/gitUtils';
-import { evaluateFileUrlTemplate } from '../utils/urlTemplates';
+import { getRemoteUrl } from '../utils/urlTemplates';
+import { RemoteFile } from '../types/search';
+import { parseUri } from './zoektTextDocumentProvider';
 
 interface SummaryEntry { type: 'summary'; }
 interface WelcomeEntry { type: 'welcome'; message: string; }
-interface RemoteFile {
-    repository: string;
-    fileName: string;
-    version: string;
-    lineNumber?: number;
-}
 
 function isFileMatch(element: ResultEntry): element is FileMatch {
     return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
@@ -118,7 +114,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             return localFileUri;
         }
 
-        return vscode.Uri.parse(`zoekt-remote://zoekt/${fileName}?branch=${branch}&repo=${repository}`);
+        return vscode.Uri.parse(`zoekt-remote://zoekt/${fileName}?branch=${branch}&repo=${repository}&version=${match.Version}`);
     }
 
     private getMatchRange(lineFragments: LineFragment[]): [number, number] {
@@ -226,20 +222,11 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         let remoteFile: RemoteFile;
 
         if (match instanceof vscode.Uri) {
-            if (match.scheme !== 'zoekt-remote') {
-                return undefined;
+            const parsed = parseUri(match);
+            if (!parsed) {
+                return "";
             }
-            // Parse the URI to extract repo, branch, and file
-            const file = match.path.startsWith('/') ? match.path.substring(1) : match.path;
-            const params = new URLSearchParams(match.query);
-            const branch = params.get('branch');
-            const repo = params.get('repo');
-
-            if (!repo || !branch || !file) {
-                return undefined;
-            }
-            remoteFile = { repository: repo, fileName: file, version: branch };
-
+            remoteFile = parsed;
         } else {
             remoteFile = {
                 repository: match.Repository,
@@ -252,22 +239,6 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             }
         }
 
-
-        const {repository, fileName, version, lineNumber} = remoteFile;
-
-        if (this.zoektResponse?.Result?.RepoURLs) {
-            const repoUrlTemplate = this.zoektResponse.Result.RepoURLs[repository];
-            if (repoUrlTemplate) {
-                let fileUrl: string;
-                if (remoteFile?.lineNumber && this.zoektResponse.Result.LineFragments) {
-                    const lineFragmentTemplate = this.zoektResponse.Result.LineFragments[repository];
-                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName, lineFragmentTemplate, lineNumber);
-                } else {
-                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName);
-                }
-                return fileUrl;
-            }
-        }
-        return "";
+        return getRemoteUrl(remoteFile, this.zoektResponse?.Result.RepoURLs, this.zoektResponse?.Result.LineFragments);
     }
 }

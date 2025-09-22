@@ -1,6 +1,9 @@
 // from:
 // https://github.com/isker/neogrok/blob/336e3291216bf3d30ba8b85f17cde17b999d28b1/src/lib/url-templates.ts
 
+import { RemoteFile } from "../types/search";
+import { RepoTemplates } from "../types/zoekt";
+
 /**
  * Implements zoekt template evaluation
  *
@@ -79,3 +82,21 @@ export const evaluateCommitUrlTemplate = (
         return template.replaceAll("{{.Version}}", () => version);
     }
 };
+
+export const getRemoteUrl = (file: RemoteFile, repoURLs: RepoTemplates | undefined, lineFragments: RepoTemplates | undefined): string | undefined => {
+    const { repository, fileName, version, lineNumber } = file;
+
+    if (repoURLs) {
+        const repoUrlTemplate = repoURLs[repository];
+        if (repoUrlTemplate) {
+            let fileUrl: string;
+            if (lineNumber && lineFragments) {
+                const lineFragmentTemplate = lineFragments[repository];
+                fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName, lineFragmentTemplate, lineNumber);
+            } else {
+                fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName);
+            }
+            return fileUrl;
+        }
+    }
+}

@@ -22,9 +22,11 @@ export interface ZoektBaseResult {
 
 export interface ZoektSearchResult extends ZoektBaseResult {
     Files: FileMatch[];
-    RepoURLs: {[key:RepoName]: ZoektTemplate};
-    LineFragments: {[key:RepoName]: ZoektTemplate};
+    RepoURLs: RepoTemplates;
+    LineFragments: RepoTemplates;
 }
+
+export type RepoTemplates = {[key:RepoName]: ZoektTemplate};
 
 export interface ZoektSearchResponse extends ZoektBaseResponse {
     Result: ZoektSearchResult;
