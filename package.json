@@ -107,7 +107,7 @@
             "view/item/context": [
                 {
                     "command": "zoekt.dismissResult",
-                    "when": "view == searchResults && viewItem != summary",
+                    "when": "view == searchResults && viewItem != summary && viewItem != welcome",
                     "group": "inline"
                 }
             ]
@@ -123,7 +123,12 @@
                 "zoekt.queryHistorySize": {
                     "type": "number",
                     "default": 5,
-                    "description": "The maximum number of search queries to cache in history."
+                    "description": "Maximum number of queries to store in history."
+                },
+                "zoekt.prepopulateLastQuery": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Pre-populate the search input with the last query on new search."
                 }
             }
         },

@@ -6,25 +6,27 @@ import { getUriForFile } from '../utils/fileUtils';
 import { findTargetRepo } from '../utils/gitUtils';
 import { evaluateFileUrlTemplate } from '../utils/urlTemplates';
 
-export type LineMatchWithFileRef = LineMatch & { FileName: string, Repository: string, Version: string };
-
-interface SummaryEntry {
-    type: 'summary';
-}
-
-function getSummaryElement(query: string, searchAllRepos: boolean): SummaryEntry {
-    return { type: 'summary' };
-}
-
-export type ResultEntry = FileMatch | LineMatchWithFileRef | SummaryEntry;
+interface SummaryEntry { type: 'summary'; }
+interface WelcomeEntry { type: 'welcome'; message: string; }
 
 function isFileMatch(element: ResultEntry): element is FileMatch {
     return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
 }
 
+function isWelcomeEntry(element: ResultEntry): element is WelcomeEntry {
+    return (element as WelcomeEntry).type === 'welcome';
+}
+
 function isSummaryEntry(element: ResultEntry): element is SummaryEntry {
     return (element as SummaryEntry).type === 'summary';
 }
+
+function getSummaryElement(): SummaryEntry {
+    return { type: 'summary' };
+}
+
+export type ResultEntry = FileMatch | LineMatchWithFileRef | SummaryEntry | WelcomeEntry;
+export type LineMatchWithFileRef = LineMatch & { FileName: string, Repository: string, Version: string };
 
 export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntry> {
     private _onDidChangeTreeData: vscode.EventEmitter<ResultEntry | undefined | null> = new vscode.EventEmitter<ResultEntry | undefined | null>();
@@ -35,20 +37,33 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     private searchAllRepos: boolean = false;
     private queryDurationMs: number = 0;
     private query: string = '';
+    private hasSearched: boolean = false;
 
     public async getTreeItem(element: ResultEntry): Promise<vscode.TreeItem> {
         if (isSummaryEntry(element)) {
             const icon = this.searchAllRepos ? 'globe' : 'repo';
-            const label = `Query Results: ${this.totalMatches} hits (${this.queryDurationMs}ms)`;
+            const label = `${this.query}`;
             const treeItem = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+            const resultStats = `${this.totalMatches} hits (${this.queryDurationMs}ms)`;
             treeItem.iconPath = new vscode.ThemeIcon(icon);
-            treeItem.tooltip = `Query: ${this.query}`;
+            treeItem.description = resultStats;
+            treeItem.tooltip = `Results: ${resultStats}`;
             treeItem.command = {
                 command: 'zoekt.search',
                 title: 'Search Zoekt',
                 arguments: [this.query, this.searchAllRepos],
             };
             treeItem.contextValue = 'summary';
+            return treeItem;
+        } else if (isWelcomeEntry(element)) {
+            const treeItem = new vscode.TreeItem(element.message, vscode.TreeItemCollapsibleState.None);
+            treeItem.command = {
+                command: 'zoekt.search',
+                title: 'Search Zoekt',
+                arguments: ['', false], // Empty query, not searching all repos
+            };
+            treeItem.iconPath = new vscode.ThemeIcon('search');
+            treeItem.contextValue = 'welcome';
             return treeItem;
         } else if (isFileMatch(element)) {
             const dirName = path.dirname(element.FileName);
@@ -134,7 +149,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     }
 
     private makeTreeItemLabel(lineMatch: LineMatch): vscode.TreeItemLabel {
-        const decodedLine = Buffer.from(lineMatch.Line, 'base64').toString('utf8');
+        const decodedLine = Buffer.from(lineMatch.Line, 'base64').toString('utf8').trimEnd();
 
         const [matchStart, _] = this.getMatchRange(lineMatch.LineFragments);
 
@@ -159,11 +174,14 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
 
     public getChildren(element?: ResultEntry | undefined): vscode.ProviderResult<ResultEntry[]> {
         if (!element) {
-            const summaryElement = getSummaryElement('', false);
+            const summaryElement = getSummaryElement();
             if (this.zoektResponse?.Result?.Files && this.zoektResponse.Result.Files.length > 0 || this.totalMatches > 0) {
                 return [summaryElement, ...(this.zoektResponse?.Result?.Files || [])];
+            } else if (this.hasSearched) {
+                return [{ type: 'welcome', message: 'Query had no results. Refine your search.' }];
+            } else {
+                return [{ type: 'welcome', message: 'Start a Zoekt search to see results here.' }];
             }
-            return [summaryElement];
         } else if (isSummaryEntry(element)) {
             return [];
         } else if (isFileMatch(element)) {
@@ -178,6 +196,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         this.searchAllRepos = searchAllRepos;
         this.queryDurationMs = queryDurationMs;
         this.query = query;
+        this.hasSearched = true;
         this._onDidChangeTreeData.fire(undefined);
     }
 
@@ -188,7 +207,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     public dismissElement(element: ResultEntry): void {
         if (isFileMatch(element)) {
             this.zoektResponse!.Result!.Files = this.zoektResponse!.Result!.Files!.filter(file => file !== element);
-        } else if (!isSummaryEntry(element)) {
+        } else if (!isSummaryEntry(element) && !isWelcomeEntry(element)) {
             // It's a LineMatchWithFileRef
             const fileMatch = this.zoektResponse!.Result!.Files!.find(file => file.FileName === element.FileName && file.Repository === element.Repository);
             if (fileMatch) {
@@ -207,6 +226,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         this.totalMatches = 0;
         this.queryDurationMs = 0;
         this.query = '';
+        this.hasSearched = false;
         this._onDidChangeTreeData.fire(undefined);
     }
 

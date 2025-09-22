@@ -38,6 +38,8 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
         await context.workspaceState.update('zoekt.searchAllReposSelection', searchAllRepos);
     } catch (error: any) {
         vscode.window.showErrorMessage(error.message);
+    } finally {
+        await context.workspaceState.update('zoekt.lastQuery', query);
     }
 }
 
@@ -52,6 +54,8 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
 
         const cachedQueries: CachedQuery[] = context.workspaceState.get('zoekt.cachedQueries', []);
         let persistedSearchAllRepos = context.workspaceState.get<boolean>('zoekt.searchAllReposSelection', false);
+        const lastQuery = context.workspaceState.get<string>('zoekt.lastQuery', '');
+        const prepopulateLastQuery = vscode.workspace.getConfiguration('zoekt').get<boolean>('prepopulateLastQuery', true);
 
         const quickPick = vscode.window.createQuickPick();
         quickPick.title = 'Zoekt Search';
@@ -74,6 +78,8 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         // Only prefill quickPick.value if initialQuery is a non-empty string
         if (typeof initialQuery === 'string' && initialQuery.length > 0) {
             quickPick.value = initialQuery;
+        } else if (prepopulateLastQuery && lastQuery.length > 0) {
+            quickPick.value = lastQuery;
         }
 
         const updateQuickPickButtons = () => {
