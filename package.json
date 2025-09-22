@@ -1,150 +1,150 @@
 {
-  "name": "zoekt-vscode",
-  "displayName": "Zoekt Code Search",
-  "description": "An extension for searching code using the Zoekt JSON API.",
-  "icon": "media/icons/zoekt-icon.png",
-  "version": "0.1.3",
-  "publisher": "h3mul",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/H3mul/zoekt-vscode"
-  },
-  "engines": {
-    "vscode": "^1.80.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "keywords": [
-    "zoekt",
-    "search",
-    "code search",
-    "search extension"
-  ],
-  "activationEvents": [],
-  "main": "./dist/extension.js",
-  "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "zoekt-sidebar",
-          "title": "Zoekt Search",
-          "icon": "media/icons/zoekt-icon-light.svg"
-        }
-      ]
+    "name": "zoekt-vscode",
+    "displayName": "Zoekt Code Search",
+    "description": "An extension for searching code using the Zoekt JSON API.",
+    "icon": "media/icons/zoekt-icon.png",
+    "version": "0.1.3",
+    "publisher": "h3mul",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/H3mul/zoekt-vscode"
     },
-    "views": {
-      "zoekt-sidebar": [
-        {
-          "id": "searchResults",
-          "name": "Results",
-          "type": "tree"
-        }
-      ]
+    "engines": {
+        "vscode": "^1.80.0"
     },
-    "commands": [
-      {
-        "command": "zoekt.search",
-        "title": "Zoekt: Search",
-        "icon": "$(search)"
-      },
-      {
-        "command": "zoekt.searchSelection",
-        "title": "Zoekt: Search",
-        "icon": "$(search)"
-      },
-      {
-        "command": "zoekt.collapseAll",
-        "title": "Collapse All",
-        "icon": "$(collapse-all)"
-      },
-      {
-        "command": "zoekt.clearHistory",
-        "title": "Zoekt: Clear Search History",
-        "icon": "$(clear-all)"
-      },
-      {
-        "command": "zoekt.dismissResult",
-        "title": "Dismiss Result",
-        "icon": "$(close)"
-      },
-      {
-        "command": "zoekt.dismissAllResults",
-        "title": "Dismiss All Results",
-        "icon": "$(clear-all)"
-      }
+    "categories": [
+        "Other"
     ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "zoekt.search",
-          "when": "view == searchResults",
-          "group": "navigation@0"
+    "keywords": [
+        "zoekt",
+        "search",
+        "code search",
+        "search extension"
+    ],
+    "activationEvents": [],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "zoekt-sidebar",
+                    "title": "Zoekt Search",
+                    "icon": "media/icons/zoekt-icon-light.svg"
+                }
+            ]
         },
-        {
-          "command": "zoekt.collapseAll",
-          "when": "view == searchResults",
-          "group": "navigation@1"
+        "views": {
+            "zoekt-sidebar": [
+                {
+                    "id": "searchResults",
+                    "name": "Results",
+                    "type": "tree"
+                }
+            ]
         },
-        {
-          "command": "zoekt.dismissAllResults",
-          "when": "view == searchResults",
-          "group": "navigation@2"
-        }
-      ],
-      "editor/context": [
-        {
-          "command": "zoekt.searchSelection",
-          "group": "zoekt@1"
-        }
-      ],
-      "commandPalette": [
-        {
-          "command": "zoekt.search",
-          "when": "false"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "zoekt.dismissResult",
-          "when": "view == searchResults && viewItem != summary",
-          "group": "inline"
-        }
-      ]
+        "commands": [
+            {
+                "command": "zoekt.search",
+                "title": "Zoekt: Search",
+                "icon": "$(search)"
+            },
+            {
+                "command": "zoekt.searchSelection",
+                "title": "Zoekt: Search",
+                "icon": "$(search)"
+            },
+            {
+                "command": "zoekt.collapseAll",
+                "title": "Collapse All",
+                "icon": "$(collapse-all)"
+            },
+            {
+                "command": "zoekt.clearHistory",
+                "title": "Zoekt: Clear Search History",
+                "icon": "$(clear-all)"
+            },
+            {
+                "command": "zoekt.dismissResult",
+                "title": "Dismiss Result",
+                "icon": "$(close)"
+            },
+            {
+                "command": "zoekt.dismissAllResults",
+                "title": "Dismiss All Results",
+                "icon": "$(clear-all)"
+            }
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "zoekt.search",
+                    "when": "view == searchResults",
+                    "group": "navigation@0"
+                },
+                {
+                    "command": "zoekt.collapseAll",
+                    "when": "view == searchResults",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "zoekt.dismissAllResults",
+                    "when": "view == searchResults",
+                    "group": "navigation@2"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "zoekt.searchSelection",
+                    "group": "zoekt@1"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "zoekt.search",
+                    "when": "false"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "zoekt.dismissResult",
+                    "when": "view == searchResults && viewItem != summary",
+                    "group": "inline"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Zoekt",
+            "properties": {
+                "zoekt.apiUrl": {
+                    "type": "string",
+                    "default": "http://localhost:6070",
+                    "description": "The URL of the Zoekt API server."
+                },
+                "zoekt.queryHistorySize": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "The maximum number of search queries to cache in history."
+                }
+            }
+        },
+        "keybindings": [
+            {
+                "command": "zoekt.searchSelection",
+                "key": "ctrl+shift+k"
+            }
+        ]
     },
-    "configuration": {
-      "title": "Zoekt",
-      "properties": {
-        "zoekt.apiUrl": {
-          "type": "string",
-          "default": "http://localhost:6070",
-          "description": "The URL of the Zoekt API server."
-        },
-        "zoekt.queryHistorySize": {
-          "type": "number",
-          "default": 5,
-          "description": "The maximum number of search queries to cache in history."
-        }
-      }
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
     },
-    "keybindings": [
-      {
-        "command": "zoekt.searchSelection",
-        "key": "ctrl+shift+k"
-      }
-    ]
-  },
-  "scripts": {
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.80.0",
-    "@vscode/vsce": "^3.6.0",
-    "ts-loader": "^9.5.4",
-    "typescript": "^5.9.2"
-  },
-  "dependencies": {
-    "axios": "^1.12.2"
-  }
+    "devDependencies": {
+        "@types/vscode": "^1.80.0",
+        "@vscode/vsce": "^3.6.0",
+        "ts-loader": "^9.5.4",
+        "typescript": "^5.9.2"
+    },
+    "dependencies": {
+        "axios": "^1.12.2"
+    }
 }
