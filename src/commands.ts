@@ -26,7 +26,12 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
             searchResultsProvider.setResults({ Result: { Files: [], RepoURLs: {}, LineFragments: {}, DurationMs: 0 } }, 0, searchAllRepos, 0, query);
             return;
         }
-        
+
+        // Linenumber 0 matches are filename matches, not content. Ignore files that only match on their filename with no content matches.
+    results.Result.Files = results.Result.Files.filter(file =>
+            file.LineMatches.some(lm => lm.LineNumber !== 0)
+        );
+
         const totalMatches = results.Result.Files.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
         searchResultsProvider.setResults(results, totalMatches, searchAllRepos, results.Result.DurationMs, query);
 

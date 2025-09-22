@@ -175,8 +175,9 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     public getChildren(element?: ResultEntry | undefined): vscode.ProviderResult<ResultEntry[]> {
         if (!element) {
             const summaryElement = getSummaryElement();
-            if (this.zoektResponse?.Result?.Files && this.zoektResponse.Result.Files.length > 0 || this.totalMatches > 0) {
-                return [summaryElement, ...(this.zoektResponse?.Result?.Files || [])];
+            const files = this.zoektResponse?.Result?.Files || [];
+            if (files.length > 0 || this.totalMatches > 0) {
+                return [summaryElement, ...files];
             } else if (this.hasSearched) {
                 return [{ type: 'welcome', message: 'Query had no results. Refine your search.' }];
             } else {
@@ -185,7 +186,8 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         } else if (isSummaryEntry(element)) {
             return [];
         } else if (isFileMatch(element)) {
-            return element.LineMatches.map(lm => ({ ...lm, FileName: element.FileName, Repository: element.Repository, Version: element.Version }));
+            return element.LineMatches
+                .map(lm => ({ ...lm, FileName: element.FileName, Repository: element.Repository, Version: element.Version }));
         }
         return [];
     }
