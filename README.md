@@ -22,7 +22,7 @@ This extension integrates with an existing [Zoekt webserver](https://github.com/
 ## Planned Features
 
 - [ ] Open remote files from other repositories directly in editor (currently just opens repository link)
-
+- [ ] Support viewing results from past commits
 
 ## Usage
 
@@ -59,6 +59,8 @@ This extension integrates with an existing [Zoekt webserver](https://github.com/
 ## Installation
 
 ### Marketplace
+
+Get the extension on the [Marketplace](https://marketplace.visualstudio.com/items?itemName=H3mul.zoekt-vscode)!
 
 ### Github Releases
 
