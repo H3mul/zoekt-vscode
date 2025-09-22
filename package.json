@@ -10,7 +10,7 @@
         "url": "https://github.com/H3mul/zoekt-vscode"
     },
     "engines": {
-        "vscode": "^1.80.0"
+        "vscode": "^1.82.0"
     },
     "categories": [
         "Other"
