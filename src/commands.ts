@@ -145,6 +145,16 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
 
     const dismissAllResultsCommand = vscode.commands.registerCommand('zoekt.dismissAllResults', () => searchResultsProvider.dismissAll());
 
+    const copyRemoteLinkCommand = vscode.commands.registerCommand('zoekt.copyRemoteLink', async (element) => {
+        const remoteUrl = await searchResultsProvider.getRemoteUrl(element);
+        if (remoteUrl) {
+            await vscode.env.clipboard.writeText(remoteUrl);
+            vscode.window.showInformationMessage('Zoekt: Remote link copied to clipboard!');
+        } else {
+            vscode.window.showErrorMessage('Zoekt: Could not get remote link.');
+        }
+    });
+
     const searchSelectionCommand = vscode.commands.registerCommand('zoekt.searchSelection', async () => {
         const editor = vscode.window.activeTextEditor;
         let selectedText = '';
@@ -160,6 +170,7 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         clearHistoryCommand,
         dismissResultCommand,
         dismissAllResultsCommand,
+        copyRemoteLinkCommand,
         searchSelectionCommand
     );
 }

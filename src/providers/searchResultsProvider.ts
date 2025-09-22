@@ -8,6 +8,12 @@ import { evaluateFileUrlTemplate } from '../utils/urlTemplates';
 
 interface SummaryEntry { type: 'summary'; }
 interface WelcomeEntry { type: 'welcome'; message: string; }
+interface RemoteFile {
+    repository: string;
+    fileName: string;
+    version: string;
+    lineNumber?: number;
+}
 
 function isFileMatch(element: ResultEntry): element is FileMatch {
     return (element as FileMatch).LineMatches !== undefined && (element as SummaryEntry).type !== 'summary';
@@ -214,5 +220,54 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         } else {
             return isLocalRepo ? `${match.FileName}:${match.LineNumber}` : `${match.Repository}/${match.FileName}:${match.LineNumber}`;
         }
+    }
+
+    public getRemoteUrl(match: FileMatch | LineMatchWithFileRef | vscode.Uri): string | undefined {
+        let remoteFile: RemoteFile;
+
+        if (match instanceof vscode.Uri) {
+            if (match.scheme !== 'zoekt-remote') {
+                return undefined;
+            }
+            // Parse the URI to extract repo, branch, and file
+            const file = match.path.startsWith('/') ? match.path.substring(1) : match.path;
+            const params = new URLSearchParams(match.query);
+            const branch = params.get('branch');
+            const repo = params.get('repo');
+
+            if (!repo || !branch || !file) {
+                return undefined;
+            }
+            remoteFile = { repository: repo, fileName: file, version: branch };
+
+        } else {
+            remoteFile = {
+                repository: match.Repository,
+                fileName: match.FileName,
+                version: match.Version
+            };
+
+            if (!isFileMatch(match)) {
+                remoteFile.lineNumber = match.LineNumber;
+            }
+        }
+
+
+        const {repository, fileName, version, lineNumber} = remoteFile;
+
+        if (this.zoektResponse?.Result?.RepoURLs) {
+            const repoUrlTemplate = this.zoektResponse.Result.RepoURLs[repository];
+            if (repoUrlTemplate) {
+                let fileUrl: string;
+                if (remoteFile?.lineNumber && this.zoektResponse.Result.LineFragments) {
+                    const lineFragmentTemplate = this.zoektResponse.Result.LineFragments[repository];
+                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName, lineFragmentTemplate, lineNumber);
+                } else {
+                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName);
+                }
+                return fileUrl;
+            }
+        }
+        return "";
     }
 }

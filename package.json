@@ -72,6 +72,11 @@
                 "command": "zoekt.dismissAllResults",
                 "title": "Dismiss All Results",
                 "icon": "$(clear-all)"
+            },
+            {
+                "command": "zoekt.copyRemoteLink",
+                "title": "Copy Remote Link",
+                "icon": "$(link)"
             }
         ],
         "menus": {
@@ -96,6 +101,11 @@
                 {
                     "command": "zoekt.searchSelection",
                     "group": "zoekt@1"
+                },
+                {
+                    "command": "zoekt.copyRemoteLink",
+                    "when": "resourceScheme == zoekt-remote",
+                    "group": "zoekt@1"
                 }
             ],
             "commandPalette": [
@@ -107,8 +117,13 @@
             "view/item/context": [
                 {
                     "command": "zoekt.dismissResult",
-                    "when": "view == searchResults && viewItem != summary && viewItem != welcome",
+                    "when": "view == searchResults && (viewItem == fileMatch || viewItem == lineMatch)",
                     "group": "inline"
+                },
+                {
+                    "command": "zoekt.copyRemoteLink",
+                    "when": "view == searchResults && (viewItem == fileMatch || viewItem == lineMatch)",
+                    "group": "navigation"
                 }
             ]
         },
