@@ -48,7 +48,7 @@ jobs:
         vsce package --pre-release --out ${{ steps.vars.outputs.vsix_file }}-pre-release.vsix
 
     - name: Delete old release assets
-      if: github.ref == 'refs/heads/main'
+      if: github.ref_type == 'branch'
       uses: mknejp/delete-release-assets@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
 
     - name: Create Pre-release
       uses: softprops/action-gh-release@v1
-      if: github.ref == 'refs/heads/main'
+      if: github.ref_type == 'branch'
       with:
         files: ${{ steps.vars.outputs.vsix_file }}-pre-release.vsix
         prerelease: true
@@ -65,13 +65,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Publish Pre-release VSCode Extension
-      if: github.ref == 'refs/heads/main'
-      run: vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ${{ steps.vars.outputs.vsix_file }}-pre-release.vsix --pre-release
-
     - name: Create Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      if: github.ref_type == 'tag'
       with:
         files: '*.vsix'
         generate_release_notes: true
@@ -79,7 +75,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Validate package.json version
-      if: startsWith(github.ref, 'refs/tags/')
+      if: github.ref_type == 'tag'
       run: |
         VERSION=$(node -p "require('./package.json').version")
         if [ "$VERSION" != "${{ steps.vars.outputs.version }}" ]; then
@@ -88,5 +84,10 @@ jobs:
         fi
 
     - name: Publish VSCode Extension
-      if: startsWith(github.ref, 'refs/tags/')
+      if: github.ref_type == 'tag'
       run: vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ${{ steps.vars.outputs.vsix_file }}.vsix
+
+    - name: Publish Pre-release VSCode Extension
+      if: github.ref_type == 'branch'
+      run: vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ${{ steps.vars.outputs.vsix_file }}-pre-release.vsix --pre-release
+      continue-on-error: true
