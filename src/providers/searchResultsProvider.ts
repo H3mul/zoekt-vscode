@@ -51,21 +51,13 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             treeItem.contextValue = 'summary';
             return treeItem;
         } else if (isFileMatch(element)) {
-            const fileName = path.basename(element.FileName);
             const dirName = path.dirname(element.FileName);
 
-            const treeItem = new vscode.TreeItem(fileName, vscode.TreeItemCollapsibleState.Expanded);
-            treeItem.description = dirName;
-            treeItem.tooltip = this.getDisplayFileName(element);
             const uri = await this.getUriForMatch(element);
-            treeItem.command = {
-                command: 'vscode.open',
-                title: 'Open File',
-                arguments: [uri],
-            };
-            if (this.searchAllRepos && !findTargetRepo(element.Repository)) {
-                treeItem.iconPath = new vscode.ThemeIcon('go-to-file');
-            }
+            const treeItem = new vscode.TreeItem(uri, vscode.TreeItemCollapsibleState.Expanded);
+            treeItem.iconPath = vscode.ThemeIcon.File;
+            treeItem.description = dirName === '.' ? '' : dirName;
+            treeItem.tooltip = this.getDisplayFileName(element);
             treeItem.contextValue = 'fileMatch';
             return treeItem;
         } else {
