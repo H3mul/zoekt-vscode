@@ -1,8 +1,15 @@
-import { SearchOptions } from "./search";
-
 export interface ZoektSearchRequest {
     Q: string;
     Opts?: SearchOptions;
+}
+export interface SearchOptions {
+    Whole?: boolean;
+    ChunkMatches?: boolean;
+    NumContextLines?: number;
+    MaxDocDisplayCount?: number;
+    MaxMatchDisplayCount?: number;
+    ShardMaxMatchCount?: number;
+    TotalMaxMatchCount?: number;
 }
 
 export interface ZoektBaseResponse {
@@ -27,6 +34,8 @@ export interface FileMatch {
     FileName: string;
     Repository: RepoName;
     Version: Version;
+    Content?: string;
+    Branches: string[];
     LineMatches: LineMatch[];
 }
 

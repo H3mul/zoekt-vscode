@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ZoektSearchRequest, ZoektSearchResponse } from '../types/zoekt';
-import { SearchQuery } from '../types/search';
+import { FetchFile, SearchQuery } from '../types/search';
 
 export class ZoektService {
     private apiUrl: string = '';
@@ -49,13 +49,24 @@ export class ZoektService {
             Opts: {
                 ChunkMatches: false,
                 NumContextLines: contextLines || 1,
-                MaxDocDisplayCount: files || 100,
+                MaxDocDisplayCount: files || 1000,
                 MaxMatchDisplayCount: matches || 0,
 
                 // These are hardcoded because they're really about bounding the amount
                 // of work the zoekt server does, they shouldn't be user configurable.
                 ShardMaxMatchCount: 10_000,
                 TotalMaxMatchCount: 100_000,
+            },
+        };
+        const response = await this.zoektRequest<ZoektSearchResponse>('/api/search', searchRequest);
+        return response;
+    }
+    public async fetchFile({repo, branch, file}: FetchFile): Promise<ZoektSearchResponse> {
+        const searchRequest: ZoektSearchRequest = {
+            Q: `repo:^${repo}$ file:^${file}$ branch:${branch}`,
+            Opts: {
+                Whole: true,
+                MaxDocDisplayCount: 1,
             },
         };
         const response = await this.zoektRequest<ZoektSearchResponse>('/api/search', searchRequest);

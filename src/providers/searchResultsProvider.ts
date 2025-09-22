@@ -26,7 +26,7 @@ function getSummaryElement(): SummaryEntry {
 }
 
 export type ResultEntry = FileMatch | LineMatchWithFileRef | SummaryEntry | WelcomeEntry;
-export type LineMatchWithFileRef = LineMatch & { FileName: string, Repository: string, Version: string };
+export type LineMatchWithFileRef = LineMatch & { FileName: string, Repository: string, Version: string, Branches: string[] };
 
 export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntry> {
     private _onDidChangeTreeData: vscode.EventEmitter<ResultEntry | undefined | null> = new vscode.EventEmitter<ResultEntry | undefined | null>();
@@ -84,7 +84,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             const [matchStart, matchEnd] = this.getMatchRange(element.LineFragments);
             const lineNumber = Math.max(element.LineNumber - 1, 0);
 
-            if (['file'].includes(uri.scheme)) {
+            if (['file', 'zoekt-remote'].includes(uri.scheme)) {
                 args.push({ selection: new vscode.Range(lineNumber, matchStart, lineNumber, matchEnd) });
             }
             treeItem.command = {
@@ -100,7 +100,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     private async getUriForMatch(match: FileMatch | LineMatchWithFileRef): Promise<vscode.Uri> {
         const repository = match.Repository;
         const fileName = match.FileName;
-        const version = match.Version;
+        const branch = match.Branches[0];
 
         const targetRepo = findTargetRepo(repository);
         if (targetRepo) {
@@ -112,32 +112,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             return localFileUri;
         }
 
-        // TODO: Doesnt work at the moment, needs a deep dive into github repositories extension.
-        //       Would be nice.
-        // const isGitHubUrl = repository.includes('github.com');
-        // if (isGitHubUrl) {
-        //     const parts = repository.split('/');
-        //     const owner = parts[1];
-        //     const repo = parts[2];
-        //     const githubUri = `github:/${owner}/${repo}/${fileName}?ref=${version}`;
-        //     return vscode.Uri.parse(githubUri);
-        // }
-
-        if (this.zoektResponse?.Result?.RepoURLs) {
-            const repoUrlTemplate = this.zoektResponse.Result.RepoURLs[repository];
-            if (repoUrlTemplate) {
-                let fileUrl: string;
-                if (!isFileMatch(match) && this.zoektResponse.Result.LineFragments) {
-                    const lineFragmentTemplate = this.zoektResponse.Result.LineFragments[repository];
-                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName, lineFragmentTemplate, match.LineNumber);
-                } else {
-                    fileUrl = evaluateFileUrlTemplate(repoUrlTemplate, version, fileName);
-                }
-                return vscode.Uri.parse(fileUrl);
-            }
-        }
-
-        return vscode.Uri.file(fileName);
+        return vscode.Uri.parse(`zoekt-remote://zoekt/${fileName}?branch=${branch}&repo=${repository}`);
     }
 
     private getMatchRange(lineFragments: LineFragment[]): [number, number] {
@@ -187,7 +162,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             return [];
         } else if (isFileMatch(element)) {
             return element.LineMatches
-                .map(lm => ({ ...lm, FileName: element.FileName, Repository: element.Repository, Version: element.Version }));
+                .map(lm => ({ ...lm, FileName: element.FileName, Repository: element.Repository, Version: element.Version, Branches: element.Branches }));
         }
         return [];
     }
