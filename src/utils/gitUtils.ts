@@ -22,9 +22,9 @@ export function getRepoNameFromRemoteUrl(remoteUrl: string): string | undefined 
     try {
         const url = new URL(remoteUrl);
         return url.hostname + url.pathname.replace(/\.git$/, '');
-    } catch (e) {
+    } catch {
         // Handle SSH format like git@github.com:owner/repo.git
-        const urlMatch = remoteUrl.match(/^(?:(?:ssh:\/\/)?git@)?([^:\/]+)[:\/]((\/?[^\/]+)\/([^\/]+?))(?:\.git)?$/);
+        const urlMatch = remoteUrl.match(/^(?:(?:ssh:\/\/)?git@)?([^:/]+)[:/]((\/?[^/]+)\/([^/]+?))(?:\.git)?$/);
         if (urlMatch) {
             return `${urlMatch[1]}/${urlMatch[2]}`;
         }

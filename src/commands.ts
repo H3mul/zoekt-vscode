@@ -53,7 +53,7 @@ export function registerCommands(context: vscode.ExtensionContext, zoektService:
         zoektService.setApiUrl(apiUrl);
 
         const cachedQueries: CachedQuery[] = context.workspaceState.get('zoekt.cachedQueries', []);
-        let persistedSearchAllRepos = context.workspaceState.get<boolean>('zoekt.searchAllReposSelection', false);
+        const persistedSearchAllRepos = context.workspaceState.get<boolean>('zoekt.searchAllReposSelection', false);
         const lastQuery = context.workspaceState.get<string>('zoekt.lastQuery', '');
         const prepopulateLastQuery = vscode.workspace.getConfiguration('zoekt').get<boolean>('prepopulateLastQuery', true);
 

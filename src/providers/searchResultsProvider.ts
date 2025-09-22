@@ -141,9 +141,9 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     }
 
     private getMatchRange(lineFragments: LineFragment[]): [number, number] {
-        let matchStart = lineFragments.reduce((min, fragment) =>
+        const matchStart = lineFragments.reduce((min, fragment) =>
             Math.min(min, fragment.LineOffset), Number.MAX_SAFE_INTEGER);
-        let matchEnd = lineFragments.reduce((max, fragment) =>
+        const matchEnd = lineFragments.reduce((max, fragment) =>
             Math.max(max, fragment.LineOffset + fragment.MatchLength), 0);
         return [matchStart, matchEnd];
     }

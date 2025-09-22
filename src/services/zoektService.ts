@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ZoektSearchRequest, ZoektSearchResponse, FileMatch } from '../types/zoekt';
+import { ZoektSearchRequest, ZoektSearchResponse } from '../types/zoekt';
 import { SearchQuery } from '../types/search';
 
 export class ZoektService {

@@ -9,8 +9,8 @@ export async function getUriForFile(fileName: string): Promise<vscode.Uri | null
         try {
             await vscode.workspace.fs.stat(fileUri);
             return fileUri;
-        } catch (error) {
-            // File does not exist in this workspace folder, continue to the next
+        } catch {
+            return null;
         }
     }
 
