@@ -15,14 +15,12 @@ This extension integrates with an existing [Zoekt webserver](https://github.com/
         (repo:repo1 or repo:repo2)
         lang:go or lang:java
 
-- Open result files directly in the editor
+- Open result files directly in the editor - even if they in your current local workplace
 - Great alternative to default VSCode search for large repositories
 - Versatile code search solution: run the zoekt server locally or offload it to another machine and serve the index with any amount users
 
 ## Planned Features
 
-- [ ] Open remote files from other repositories directly in editor (currently just opens repository link)
-- [ ] Support viewing results from past commits
 
 ## Usage
 
