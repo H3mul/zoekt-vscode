@@ -1,10 +1,19 @@
 // Renovate configuration file in JSON5 format
 {
-  extends: ["config:recommended"],
-  packageRules: [
+    extends: [
+        "config:recommended", 
+        "helpers:pinGitHubActionDigests"
+    ],
+    automerge: true,
+    labels: ["renovate"],
+    prConcurrentLimit: 10,
+    "rebaseWhen": "behind-base-branch",
+    platform: "github",
+    repositories: [ "h3mul/zoekt-vscode" ],
+    packageRules: [
     {
       // Automerge minor change PRs
-      matchUpdateTypes: ["minor"],
+      matchUpdateTypes: ["patch", "minor"],
       automerge: true,
     }
   ]
