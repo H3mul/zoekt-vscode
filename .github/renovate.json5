@@ -1,0 +1,11 @@
+// Renovate configuration file in JSON5 format
+{
+  extends: ["config:recommended"],
+  packageRules: [
+    {
+      // Automerge minor change PRs
+      matchUpdateTypes: ["minor"],
+      automerge: true,
+    }
+  ]
+}

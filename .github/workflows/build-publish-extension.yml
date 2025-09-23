@@ -7,6 +7,13 @@ on:
       - main
     tags:
       - "v*"
+    paths-ignore:
+      - README.md
+      - LICENCE
+      - eslint.config.mjs
+      - .github/renovate.json5
+      - .github/workflows/renovate.yml
+      - .vscode/**
 
 jobs:
   release:
