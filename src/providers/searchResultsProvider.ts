@@ -111,10 +111,20 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
     private async getUriForMatch(match: FileMatch | LineMatchWithFileRef): Promise<vscode.Uri> {
         const repository = match.Repository;
         const fileName = match.FileName;
-        const branch = match.Branches[0];
+
+        const zoektRemoteUri = constructZoektUri({
+            fileName: match.FileName,
+            repository: match.Repository,
+            branch: match.Branches[0],
+            version: match.Version,
+        });
 
         const targetRepo = findTargetRepo(repository);
         if (targetRepo) {
+            const currentCommit = targetRepo.state.HEAD.commit;
+            if (match.Version != currentCommit) {
+                return zoektRemoteUri;
+            }
             return vscode.Uri.joinPath(targetRepo.rootUri, fileName);
         }
 
@@ -123,12 +133,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             return localFileUri;
         }
 
-        return constructZoektUri({
-            fileName: match.FileName,
-            repository: match.Repository,
-            branch: match.Branches[0],
-            version: match.Version,
-        });
+        return zoektRemoteUri;
     }
 
     private getMatchRange(lineFragments: LineFragment[]): [number, number] {
