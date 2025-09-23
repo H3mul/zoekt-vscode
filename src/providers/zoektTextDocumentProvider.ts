@@ -8,17 +8,19 @@ export class ZoektTextDocumentProvider implements vscode.TextDocumentContentProv
 
     // Example URI:  "zoekt-remote://zoekt/package.json?branch=HEAD&repo=github.com/microsoft/vscode"
     public async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        const file = uri.path.startsWith('/') ? uri.path.substring(1) : uri.path;
-        const params = new URLSearchParams(uri.query);
-        const branch = params.get('branch');
-        const repo = params.get('repo');
+        const remoteFile = parseZoektUri(uri);
+        if (!remoteFile) {
+            return `Error: uri could not be parsed ${uri}`;
+        }
 
-        if (!repo || !branch || !file) {
+        const {repository, branch, fileName} = remoteFile
+
+        if (!repository || !branch || !fileName) {
             return `Error: Invalid zoekt-remote URI. Expected format: zoekt-remote://zoekt/<filepath>?repo=<reponame>&branch=<branch>`;
         }
 
         try {
-            const response = await this.zoektService.fetchFile({ repo, branch, file });
+            const response = await this.zoektService.fetchFile({ repo: repository, branch, file: fileName });
             if (response.Result?.Files && response.Result.Files.length > 0) {
                 const fileContent = response.Result.Files[0].Content;
                 if (fileContent) {
@@ -35,18 +37,34 @@ export class ZoektTextDocumentProvider implements vscode.TextDocumentContentProv
     }
 }
 
-export function parseUri(uri: vscode.Uri): RemoteFile | undefined {
+export function constructZoektUri(file: RemoteFile): vscode.Uri {
+    const params = new URLSearchParams();
+    params.append('file', file.fileName);
+    params.append('repo', file.repository);
+    params.append('version', file.version);
+    if (file.branch) params.append('branch', file.branch);
+    if (file.lineNumber) params.append('line', String(file.lineNumber));
+
+    return vscode.Uri.parse(`zoekt-remote://zoekt/${file.fileName}?${params.toString()}`);
+}
+
+export function parseZoektUri(uri: vscode.Uri): RemoteFile | undefined {
     if (uri.scheme !== 'zoekt-remote') {
         return undefined;
     }
     // Parse the URI to extract repo, branch, and file
-    const fileName = uri.path.startsWith('/') ? uri.path.substring(1) : uri.path;
     const params = new URLSearchParams(uri.query);
+    const fileName = params.get('file');
     const version = params.get('version');
+    const branch = params.get('branch');
     const repository = params.get('repo');
+    const line = params.get('line') ? parseInt(params.get('line')!) : undefined;
 
     if (!repository || !version || !fileName) {
         return undefined;
     }
-    return { repository, fileName, version };
+    const fileObject:RemoteFile = { repository, fileName, version };
+    if (branch) fileObject.branch = branch;
+    if (line) fileObject.lineNumber = line;
+    return fileObject;
 }

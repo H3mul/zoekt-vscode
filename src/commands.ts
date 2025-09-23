@@ -27,12 +27,14 @@ async function performSearch(query: string, zoektService: ZoektService, searchRe
             return;
         }
 
-        // Linenumber 0 matches are filename matches, not content. Ignore files that only match on their filename with no content matches.
-    results.Result.Files = results.Result.Files.filter(file =>
-            file.LineMatches.some(lm => lm.LineNumber !== 0)
+        // Count the matches first - before filtering
+        const totalMatches = results.Result.Files.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
+
+        // Linenumber 0 matches are filename matches, not content - filter them out.
+        results.Result.Files.forEach(file =>
+            file.LineMatches = file.LineMatches.filter(lm => lm.LineNumber !== 0)
         );
 
-        const totalMatches = results.Result.Files.reduce((sum, file) => sum + (file.LineMatches ? file.LineMatches.length : 0), 0);
         searchResultsProvider.setResults(results, totalMatches, searchAllRepos, results.Result.DurationMs, query);
 
         // Update cached queries

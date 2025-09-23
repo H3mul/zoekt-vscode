@@ -6,7 +6,7 @@ import { getUriForFile } from '../utils/fileUtils';
 import { findTargetRepo } from '../utils/gitUtils';
 import { getRemoteUrl } from '../utils/urlTemplates';
 import { RemoteFile } from '../types/search';
-import { parseUri } from './zoektTextDocumentProvider';
+import { constructZoektUri, parseZoektUri } from './zoektTextDocumentProvider';
 
 interface SummaryEntry { type: 'summary'; }
 interface WelcomeEntry { type: 'welcome'; message: string; }
@@ -71,11 +71,20 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             const dirName = path.dirname(element.FileName);
 
             const uri = await this.getUriForMatch(element);
-            const treeItem = new vscode.TreeItem(uri, vscode.TreeItemCollapsibleState.Expanded);
+            const expansion = element.LineMatches.length === 0
+                ? vscode.TreeItemCollapsibleState.None
+                : vscode.TreeItemCollapsibleState.Expanded;
+
+            const treeItem = new vscode.TreeItem(uri, expansion);
             treeItem.iconPath = vscode.ThemeIcon.File;
             treeItem.description = dirName === '.' ? '' : dirName;
             treeItem.tooltip = this.getDisplayFileName(element);
             treeItem.contextValue = 'fileMatch';
+            treeItem.command = {
+                command: 'vscode.open',
+                title: 'Open File',
+                arguments: [uri],
+            };
             return treeItem;
         } else {
             // LineMatch case
@@ -114,7 +123,12 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             return localFileUri;
         }
 
-        return vscode.Uri.parse(`zoekt-remote://zoekt/${fileName}?branch=${branch}&repo=${repository}&version=${match.Version}`);
+        return constructZoektUri({
+            fileName: match.FileName,
+            repository: match.Repository,
+            branch: match.Branches[0],
+            version: match.Version,
+        });
     }
 
     private getMatchRange(lineFragments: LineFragment[]): [number, number] {
@@ -191,9 +205,6 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             const fileMatch = this.zoektResponse!.Result!.Files!.find(file => file.FileName === element.FileName && file.Repository === element.Repository);
             if (fileMatch) {
                 fileMatch.LineMatches = fileMatch.LineMatches.filter(line => line.LineNumber !== element.LineNumber);
-                if (fileMatch.LineMatches.length === 0) {
-                    this.dismissElement(fileMatch); // Dismiss the file if no line matches are left
-                }
             }
         }
         this.totalMatches = this.zoektResponse?.Result?.Files?.reduce((acc, file) => acc + file.LineMatches.length, 0) || 0;
@@ -222,7 +233,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         let remoteFile: RemoteFile;
 
         if (match instanceof vscode.Uri) {
-            const parsed = parseUri(match);
+            const parsed = parseZoektUri(match);
             if (!parsed) {
                 return "";
             }

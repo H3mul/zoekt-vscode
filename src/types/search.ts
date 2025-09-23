@@ -14,5 +14,6 @@ export interface RemoteFile {
     repository: string;
     fileName: string;
     version: string;
+    branch?: string;
     lineNumber?: number;
 }

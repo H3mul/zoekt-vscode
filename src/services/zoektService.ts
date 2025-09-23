@@ -49,7 +49,7 @@ export class ZoektService {
             Opts: {
                 ChunkMatches: false,
                 NumContextLines: contextLines || 1,
-                MaxDocDisplayCount: files || 1000,
+                MaxDocDisplayCount: files || 100,
                 MaxMatchDisplayCount: matches || 0,
 
                 // These are hardcoded because they're really about bounding the amount
