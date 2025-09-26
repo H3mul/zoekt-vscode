@@ -45,7 +45,7 @@ export function constructZoektUri(file: RemoteFile): vscode.Uri {
     if (file.branch) params.append('branch', file.branch);
     if (file.lineNumber) params.append('line', String(file.lineNumber));
 
-    return vscode.Uri.parse(`zoekt-remote://zoekt/${file.fileName}?${params.toString()}`);
+    return vscode.Uri.parse(`zoekt-remote://zoekt/Zoekt preview ${file.fileName}?${params.toString()}`);
 }
 
 export function parseZoektUri(uri: vscode.Uri): RemoteFile | undefined {

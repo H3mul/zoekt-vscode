@@ -230,7 +230,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         if (isFileMatch(match)) {
             return isLocalRepo ? match.FileName : `${match.Repository}/${match.FileName}`;
         } else {
-            return isLocalRepo ? `${match.FileName}:${match.LineNumber}` : `${match.Repository}/${match.FileName}:${match.LineNumber}`;
+            return isLocalRepo ? `${match.FileName}:${match.LineNumber}` : `${match.Repository}/${match.FileName}:${match.LineNumber}@${match.Version}`;
         }
     }
 
