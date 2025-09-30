@@ -9,8 +9,7 @@
     branchConcurrentLimit: 0,
     automerge: true,
     labels: ["renovate"],
-    prConcurrentLimit: 10,
-    "rebaseWhen": "behind-base-branch",
+    rebaseWhen: "behind-base-branch",
     platform: "github",
     repositories: [ "h3mul/zoekt-vscode" ],
     packageRules: [
