@@ -4,6 +4,9 @@
         "config:recommended", 
         "helpers:pinGitHubActionDigests"
     ],
+    prConcurrentLimit: 0, // No limit on concurrent PRs
+    prHourlyLimit: 0,     // No limit on hourly PR creation
+    branchConcurrentLimit: 0,
     automerge: true,
     labels: ["renovate"],
     prConcurrentLimit: 10,
