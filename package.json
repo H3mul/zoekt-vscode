@@ -3,7 +3,7 @@
     "displayName": "Zoekt Code Search",
     "description": "An extension for searching code using the Zoekt JSON API.",
     "icon": "media/icons/zoekt-icon.png",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "publisher": "h3mul",
     "repository": {
         "type": "git",
