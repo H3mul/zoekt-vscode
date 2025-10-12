@@ -28,7 +28,14 @@ function getSummaryElement(): SummaryEntry {
 }
 
 export type ResultEntry = FileMatch | LineMatchWithFileRef | SummaryEntry | WelcomeEntry;
-export type LineMatchWithFileRef = LineMatch & { FileName: string, Repository: string, Version: string, Branches: string[] };
+export type LineMatchWithFileRef = LineMatch & {
+    FileName: string,
+    Repository: string,
+    SubRepositoryName?: string,
+    SubRepositoryPath?: string,
+    Version: string,
+    Branches: string[]
+};
 
 export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntry> {
     private _onDidChangeTreeData: vscode.EventEmitter<ResultEntry | undefined | null> = new vscode.EventEmitter<ResultEntry | undefined | null>();
@@ -68,7 +75,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             treeItem.contextValue = 'welcome';
             return treeItem;
         } else if (isFileMatch(element)) {
-            const dirName = path.dirname(element.FileName);
+            const dirName = this.getDirectory(element);
 
             const uri = await this.getUriForMatch(element);
             const expansion = element.LineMatches.length === 0
@@ -77,7 +84,7 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
 
             const treeItem = new vscode.TreeItem(uri, expansion);
             treeItem.iconPath = vscode.ThemeIcon.File;
-            treeItem.description = dirName === '.' ? '' : dirName;
+            treeItem.description = dirName;
             treeItem.tooltip = this.getDisplayFileName(element);
             treeItem.contextValue = 'fileMatch';
             treeItem.command = {
@@ -183,7 +190,15 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             return [];
         } else if (isFileMatch(element)) {
             return element.LineMatches
-                .map(lm => ({ ...lm, FileName: element.FileName, Repository: element.Repository, Version: element.Version, Branches: element.Branches }));
+                .map(lm => ({
+                    ...lm,
+                    FileName: element.FileName,
+                    Repository: element.Repository,
+                    SubRepositoryName: element.SubRepositoryName,
+                    SubRepositoryPath: element.SubRepositoryPath,
+                    Version: element.Version,
+                    Branches: element.Branches
+                }));
         }
         return [];
     }
@@ -225,12 +240,31 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
         this._onDidChangeTreeData.fire(undefined);
     }
 
+    private getFilePath(element: FileMatch | LineMatchWithFileRef): string {
+        const filePath = element.SubRepositoryName && element.SubRepositoryPath ?
+            path.relative(element.SubRepositoryPath, element.FileName) :
+            element.FileName;
+        return filePath;
+    }
+
+    private getRepository(element: FileMatch | LineMatchWithFileRef): string {
+        return element.SubRepositoryName || element.Repository;
+    }
+
+    private getDirectory(element: FileMatch | LineMatchWithFileRef): string {
+        const filePath = this.getFilePath(element);
+        const dirName = path.dirname(filePath);
+        return dirName === '.' ? '' : dirName;
+    }
+
     private getDisplayFileName(match: FileMatch | LineMatchWithFileRef): string {
-        const isLocalRepo = findTargetRepo(match.Repository);
+        const repoName = this.getRepository(match);
+        const isLocalRepo = findTargetRepo(repoName);
+        const filePath = this.getFilePath(match);
         if (isFileMatch(match)) {
-            return isLocalRepo ? match.FileName : `${match.Repository}/${match.FileName}`;
+            return isLocalRepo ? filePath : `${repoName}:${filePath}`;
         } else {
-            return isLocalRepo ? `${match.FileName}:${match.LineNumber}` : `${match.Repository}/${match.FileName}:${match.LineNumber}@${match.Version}`;
+            return isLocalRepo ? `${match.FileName}:${match.LineNumber}` : `${repoName}/${match.Version.substring(0, 7)}/${filePath}:${match.LineNumber}`;
         }
     }
 
@@ -245,8 +279,8 @@ export class SearchResultsProvider implements vscode.TreeDataProvider<ResultEntr
             remoteFile = parsed;
         } else {
             remoteFile = {
-                repository: match.Repository,
-                fileName: match.FileName,
+                repository: this.getRepository(match),
+                fileName: this.getFilePath(match),
                 version: match.Version
             };
 

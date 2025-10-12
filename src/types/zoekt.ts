@@ -39,6 +39,8 @@ export interface FileMatch {
     Content?: string;
     Branches: string[];
     LineMatches: LineMatch[];
+    SubRepositoryName?: RepoName;
+    SubRepositoryPath?: string;
 }
 
 export interface LineMatch {
