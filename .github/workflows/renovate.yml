@@ -3,7 +3,7 @@ name: Run Renovate
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 1" # Runs every Monday at midnight UTC
+    - cron: "0 0 * * *" # Runs every Monday at midnight UTC
   push:
     paths:
       - .github/renovate.json5
