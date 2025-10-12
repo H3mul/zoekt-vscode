@@ -66,7 +66,7 @@ jobs:
         assets: '*.vsix'
 
     - name: Create Pre-release
-      uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2
+      uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2
       if: github.ref_type == 'branch'
       with:
         files: ${{ steps.vars.outputs.vsix_file }}-pre-release.vsix
@@ -76,7 +76,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create Release
-      uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2
+      uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2
       if: github.ref_type == 'tag'
       with:
         files: ${{ steps.vars.outputs.vsix_file }}.vsix
