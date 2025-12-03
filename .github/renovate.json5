@@ -16,6 +16,7 @@
     {
       // Automerge minor change PRs
       matchUpdateTypes: ["patch", "minor", "digest"],
+      matchManagers: ["github-actions"],
       automerge: true,
     }
   ]
