@@ -1,22 +1,31 @@
 // Renovate configuration file in JSON5 format
 {
+    $schema: "https://docs.renovatebot.com/renovate-schema.json",
     extends: [
-        "config:recommended", 
+        "config:best-practices",
         "helpers:pinGitHubActionDigests"
     ],
+    onboarding: false,
+    requireConfig: "ignored",
+    platform: "github",
+    repositories: [ "h3mul/zoekt-vscode" ],
     prConcurrentLimit: 0, // No limit on concurrent PRs
     prHourlyLimit: 0,     // No limit on hourly PR creation
     branchConcurrentLimit: 0,
     automerge: true,
     labels: ["renovate"],
     rebaseWhen: "behind-base-branch",
-    platform: "github",
-    repositories: [ "h3mul/zoekt-vscode" ],
     packageRules: [
     {
+        // set `chore` to the commit for updating packages
+        matchPackagePatterns: [ "*" ],
+        semanticCommitType: "chore",
+    },
+    {
       // Automerge minor change PRs
+      groupName: 'all patch minor and digest',
+      matchPackageNames: [ '*' ],
       matchUpdateTypes: ["patch", "minor", "digest"],
-      matchManagers: ["github-actions"],
       automerge: true,
     }
   ]
