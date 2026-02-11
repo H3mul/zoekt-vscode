@@ -161,7 +161,7 @@
         "lint": "eslint src/**/*.ts"
     },
     "devDependencies": {
-        "@types/vscode": "1.108.1",
+        "@types/vscode": "1.109.0",
         "@typescript-eslint/eslint-plugin": "8.54.0",
         "@typescript-eslint/parser": "8.54.0",
         "@vscode/vsce": "3.7.1",
