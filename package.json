@@ -162,8 +162,8 @@
     },
     "devDependencies": {
         "@types/vscode": "1.109.0",
-        "@typescript-eslint/eslint-plugin": "8.55.0",
-        "@typescript-eslint/parser": "8.55.0",
+        "@typescript-eslint/eslint-plugin": "8.56.0",
+        "@typescript-eslint/parser": "8.56.0",
         "@vscode/vsce": "3.7.1",
         "eslint": "9.39.2",
         "ts-loader": "9.5.4",
