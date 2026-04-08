@@ -166,7 +166,7 @@
         "@typescript-eslint/parser": "8.57.2",
         "@vscode/vsce": "3.7.1",
         "eslint": "10.0.3",
-        "ts-loader": "9.5.4",
+        "ts-loader": "9.5.7",
         "typescript": "5.9.3"
     },
     "dependencies": {
