@@ -167,7 +167,7 @@
         "@vscode/vsce": "3.7.1",
         "eslint": "10.2.0",
         "ts-loader": "9.5.7",
-        "typescript": "5.9.3"
+        "typescript": "6.0.3"
     },
     "dependencies": {
         "axios": "^1.12.2"
