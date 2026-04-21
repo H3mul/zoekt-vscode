@@ -165,7 +165,7 @@
         "@typescript-eslint/eslint-plugin": "8.58.0",
         "@typescript-eslint/parser": "8.58.0",
         "@vscode/vsce": "3.7.1",
-        "eslint": "10.2.0",
+        "eslint": "10.2.1",
         "ts-loader": "9.5.7",
         "typescript": "5.9.3"
     },
